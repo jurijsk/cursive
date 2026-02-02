@@ -94,12 +94,12 @@ onMounted(() => {
 watch(input, (v) => renderWithOpenType(v));
 </script>
 <template>
-	<div class="opentype-test">
-		<label>{{ param }}</label>
+	<div class="opentype-test"> opentype.js-only test. It looks like it can hot handle Arabic fully even when the text is rendered as single path - diacritics are misplaces (compare to h1 in blue)
 		<input v-model="input" />
+		<h1 style="color: blue;" class="font_family_tajawal">{{ input }}</h1>
 		<div v-if="!fontLoaded">Loading font and rendering (client only)...</div>
 		<div v-else class="svg-comparison">
-			<svg :width="Math.max(300, glyphs.reduce((s, g) => s + g.width, 0))" :height="fontSize + 20" xmlns="http://www.w3.org/2000/svg">
+			<svg :width="Math.max(300, glyphs.reduce((s, g) => s + g.width, 0))" :height="fontSize + 30" xmlns="http://www.w3.org/2000/svg">
 				<g fill="black" stroke="none">
 					<template v-for="(g, idx) in glyphs" :key="idx">
 						<path :d="g.d" />
@@ -107,7 +107,7 @@ watch(input, (v) => renderWithOpenType(v));
 				</g>
 			</svg>
 			<!-- Raw single-path rendering (no greedy processing) - always shown side-by-side -->
-			<svg :width="Math.max(300, rawWidth)" :height="fontSize + 20" xmlns="http://www.w3.org/2000/svg">
+			<svg :width="Math.max(300, rawWidth)" :height="fontSize + 30" xmlns="http://www.w3.org/2000/svg">
 				<g fill="none" stroke="black">
 					<path :d="rawPath" />
 				</g>
@@ -120,6 +120,10 @@ watch(input, (v) => renderWithOpenType(v));
 	display: flex;
 	flex-direction: column;
 	gap: 0.5rem;
+}
+
+.font_family_tajawal {
+	font-family: Tajawal-Regular;
 }
 
 .svg-comparison {
