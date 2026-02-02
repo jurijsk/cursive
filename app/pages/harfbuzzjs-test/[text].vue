@@ -5,108 +5,141 @@ import { useRoute } from 'vue-router';
 const route = useRoute();
 const param = (route.params.text as string) ?? '';
 const input = ref(param || 'مرحبا');
-const shaped = ref<Array<any>>([]);
+
+const glyphs = ref<Array<any>>([]);
 const error = ref<string | null>(null);
+const ready = ref(false);
 
-async function runHarfBuzz(text: string) {
-	shaped.value = [];
-	error.value = null;
+let hbRuntime: any = null; // the hb factory runtime (Emscripten Module)
+let harfbuzz: any = null;   // the JS wrapper (hbjs)
+let fontObj: any = null;    // hb font object
+let faceObj: any = null;
+
+const DESIRED_EM = 120; // px em size for rendering
+
+async function initHarfbuzz() {
 	try {
-		const harf = await import('harfbuzzjs');
-		const hbFactory = (harf && (harf.default || harf));
-		const hb = await hbFactory();
+		// load hb runtime factory and wrapper
+		const harfbuzzjs = await import('harfbuzzjs/hb.js');
+		const hbWrapperMod = await import('harfbuzzjs/hbjs.js');
+		const hbFactory = (harfbuzzjs as any).default ?? harfbuzzjs;
+		const hbModule = await (hbFactory && typeof hbFactory.then === 'function' ? await hbFactory : hbFactory)({ locateFile: (p: string) => '/hb.wasm' });
+		hbRuntime = hbModule;
+		const hbWrapper = (hbWrapperMod as any).default ?? hbWrapperMod;
+		harfbuzz = hbWrapper(hbRuntime);
 
-		const fontBuf = await fetch('/fonts/Tajawal-Regular.ttf').then((r) => r.arrayBuffer());
+		// load font once
+		const fontBuf = await fetch('/fonts/Tajawal-Regular.ttf').then(r => r.arrayBuffer());
+		const blob = harfbuzz.createBlob(fontBuf);
+		faceObj = harfbuzz.createFace(blob, 0);
+		fontObj = harfbuzz.createFont(faceObj);
 
-		const face = hb.Face(fontBuf);
-		const font = hb.Font(face);
-		const buf = hb.createBuffer();
-		const normalized = (text ?? '').normalize('NFC');
-		buf.addText(normalized);
-		buf.guessSegmentProperties();
-		hb.shape(font, buf);
-
-		const infos = buf.getGlyphInfos();
-		const positions = buf.getGlyphPositions();
-
-		const out: any[] = [];
-		for(let i = 0;i < infos.length;i++) {
-			out.push({
-				index: infos[i].codepoint ?? infos[i].gid ?? infos[i].glyph ?? infos[i].glyph_id ?? infos[i].index ?? infos[i],
-				cluster: infos[i].cluster,
-				x_advance: positions[i]?.x_advance ?? positions[i]?.xAdvance ?? positions[i]?.x ?? 0,
-				x_offset: positions[i]?.x_offset ?? positions[i]?.xOffset ?? positions[i]?.xOff ?? 0,
-				y_advance: positions[i]?.y_advance ?? positions[i]?.yAdvance ?? positions[i]?.y ?? 0,
-				y_offset: positions[i]?.y_offset ?? positions[i]?.yOffset ?? positions[i]?.yOff ?? 0,
-			});
-		}
-
-		shaped.value = out;
+		ready.value = true;
 	} catch(e: any) {
-		console.error('harfbuzz error', e);
-		error.value = e?.message || String(e);
+		console.error('init harfbuzz error', e);
+		error.value = String(e?.message ?? e);
 	}
 }
 
-onMounted(() => {
-	runHarfBuzz(input.value);
+function clearGlyphs() { glyphs.value = []; }
+
+async function shapeAndRender(text: string) {
+	if(!ready.value || !harfbuzz || !fontObj) return;
+	try {
+
+		glyphs.value.length = 0;
+		const buf = harfbuzz.createBuffer();
+		buf.addText((text ?? '').normalize('NFC'));
+		buf.guessSegmentProperties();
+		harfbuzz.shape(fontObj, buf);
+		const out = buf.json(); // array of { g, cl, ax, ay, dx, dy }
+
+		// face.upem gives units-per-em
+		const upem = faceObj.upem || 1000;
+		const scale = DESIRED_EM / upem;
+
+		let xCursor = 0;
+		const items: any[] = [];
+		for(const g of out) {
+			const glyphId = g.g;
+			const xAdvance = g.ax;
+			const xDisp = g.dx;
+			const yDisp = g.dy;
+
+			let path = null;
+			try { path = fontObj.glyphToPath(glyphId); } catch(e) { path = null; }
+
+			// position in px after scaling; note: we flip the svg Y axis in the group,
+			// so invert the y displacement here (HarfBuzz dy is in font units)
+			const x = (xCursor + xDisp) * scale;
+			const y = yDisp * scale;
+
+			items.push({ glyphId, path, x, y, xAdvance: xAdvance * scale, scale });
+
+			xCursor += xAdvance;
+		}
+
+		glyphs.value = items;
+		buf.destroy();
+	} catch(e: any) {
+		console.error('shape error', e);
+		error.value = String(e?.message ?? e);
+	}
+}
+
+onMounted(async () => {
+	await initHarfbuzz();
+	await shapeAndRender(input.value);
 });
 
-watch(input, (v) => runHarfBuzz(v));
+watch(input, (v) => shapeAndRender(v));
 </script>
 <template>
-	<div class="harfbuzz-test">
-		<label>Text to shape (path param used):</label>
+	<div>
+		<label>Text:</label>
 		<input v-model="input" />
+		<h1>{{ input }}</h1>
 		<div v-if="error">Error: {{ error }}</div>
-		<div v-else>
-			<h3>Shaped glyph info (harfbuzzjs only)</h3>
-			<table>
-				<thead>
-					<tr>
-						<th>#</th>
-						<th>glyph index</th>
-						<th>cluster</th>
-						<th>x_advance</th>
-						<th>x_offset</th>
-						<th>y_advance</th>
-						<th>y_offset</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr v-for="(g, i) in shaped" :key="i">
-						<td>{{ i + 1 }}</td>
-						<td>{{ g.index }}</td>
-						<td>{{ g.cluster }}</td>
-						<td>{{ g.x_advance }}</td>
-						<td>{{ g.x_offset }}</td>
-						<td>{{ g.y_advance }}</td>
-						<td>{{ g.y_offset }}</td>
-					</tr>
-				</tbody>
-			</table>
+		<div v-if="ready">
+			<svg :width="Math.max(400, (glyphs.reduce((s, g) => s + (g.xAdvance || 0), 0) + 20))" :height="DESIRED_EM + 40" viewBox="0 0 800 200" style="border:1px solid #ddd">
+				<g :transform="`translate(10, ${DESIRED_EM + 10}) scale(1, -1)`">
+					<template v-for="(g, i) in glyphs" :key="i">
+						<path v-if="g.path" :d="g.path" :transform="`translate(${g.x},${g.y}) scale(${DESIRED_EM / (faceObj?.upem || 1000)})`" fill="black" />
+						<rect v-else :x="g.x" y="-2" :width="8" height="4" fill="red" />
+					</template>
+				</g>
+			</svg>
 		</div>
+		<div v-else>Initializing HarfBuzz...</div>
 	</div>
 </template>
 <style scoped>
-.harfbuzz-test {
-	display: flex;
-	flex-direction: column;
-	gap: 0.5rem;
+h1 {
+	font-family: 'Tajawal Regular';
+	font-weight: 400;
+	font-size: 5rem;
 }
 
 input {
-	padding: 0.4rem
+	padding: 0.4rem;
+	margin-bottom: 0.6rem
 }
 
-table {
-	border-collapse: collapse;
-	width: 100%
-}
+svg {
+	display: block;
+	max-width: 100%;
 
-th, td {
-	border: 1px solid #ddd;
-	padding: 0.3rem;
-	text-align: left
+	path {
+		pointer-events: painted;
+		stroke: orange;
+		stroke-width: 100px;
+		stroke-opacity: 0;
+
+
+
+		&:hover {
+			fill: aqua;
+		}
+	}
 }
 </style>
