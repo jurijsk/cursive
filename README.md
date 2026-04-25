@@ -73,3 +73,8 @@ bun run preview
 ```
 
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+
+
+## AI and stuff
+
+https://github.com/microsoft/vscode/wiki/Copilot-Issues#custom-instructions-logs

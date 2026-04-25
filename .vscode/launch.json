@@ -1,0 +1,48 @@
+{
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	//confuguration below copied from: https://nuxt.com/docs/4.x/guide/going-further/debugging#example-vs-code-debug-configuration
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Attach",
+			"port": 9229,
+			"processId": "${command:PickProcess}",
+			"request": "attach",
+			//'true' makes it only stop on breakpoints
+			"continueOnAttach": true,
+			"skipFiles": [
+				"<node_internals>/**"
+			],
+			"type": "node"
+		},
+		{
+			"type": "msedge",
+			"request": "launch",
+			"name": "client",
+			"url": "http://localhost:3000",
+			// this should point to your Nuxt `srcDir`, which is `app` by default
+			"webRoot": "${workspaceFolder}/app",
+			"userDataDir": true
+		},
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "server",
+			"outputCapture": "std",
+			"program": "${workspaceFolder}/node_modules/nuxt/bin/nuxt.mjs",
+			"args": [
+				"dev"
+			],
+		}
+	],
+	"compounds": [
+		{
+			"name": "fullstack",
+			"configurations": [
+				"server",
+				"client"
+			]
+		}
+	],
+}

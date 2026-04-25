@@ -18,6 +18,25 @@ This is a small Nuxt 4 single-page portfolio site (static target). Keep guidance
   - Generate static site: `npm run generate` — use this when preparing artifacts for GitHub Pages.
   - Preview generated site: `npm run preview`.
 
+- **Testing & validation workflow:**
+  - **Test infrastructure:** Vitest (unit/component tests), Playwright (E2E), ESLint, TypeScript type checking.
+  - **Test locations:** `test/unit/` (unit tests), `test/nuxt/` (Nuxt component tests), `tests/` (Playwright E2E tests).
+  - **Available scripts:**
+    - `npm run lint` — Run ESLint with auto-fix
+    - `npm run type-check` — Run TypeScript compiler without emitting files
+    - `npm run test` — Run all Vitest tests once (unit + Nuxt component tests)
+    - `npm run test:watch` — Run tests in watch mode
+    - `npm run test:unit` — Run only unit tests
+    - `npm run test:nuxt` — Run only Nuxt component tests
+    - `npm run test:e2e` — Run Playwright E2E tests
+    - `npm run test:coverage` — Generate test coverage report
+    - `npm run validate` — Full validation pipeline (lint → type-check → test → build → generate)
+  - **AI agent workflow:** When making code changes, run `npm run validate` to ensure all checks pass before completing work. If tests fail, fix code and rerun until green. After validation passes, run `npm run preview` to verify the static site works correctly.
+  - **Writing tests:** 
+    - Unit tests: Use Vitest + Node environment. Place in `test/unit/` (e.g., `test/unit/harfbuzz.test.ts`).
+    - E2E tests: Use Playwright. Place in `tests/` (e.g., `tests/harfbuzz-rendering.spec.ts`). Use `@nuxt/test-utils/playwright` helpers (goto, page fixtures).
+    - Test HarfBuzz WASM loading, text rendering, and SVG output generation using both approaches.
+
 - **i18n convention:**
   - Translation files are simple JSON files under `i18n/locales/` and referenced in `nuxt.config.ts` by `file` name. When adding a locale: add the JSON file and add an entry to the `locales` array in `nuxt.config.ts`.
   - Example: the repository already contains `i18n/locales/en.json` and `nuxt.config.ts` sets `defaultLocale: 'en'`.
@@ -70,8 +89,6 @@ This is a small Nuxt 4 single-page portfolio site (static target). Keep guidance
   - If adding a locale: update `i18n/locales/<code>.json` and add the locale entry in `nuxt.config.ts`.
   - If adding pages/components: place them under `app/pages` or `app/components` respectively and avoid changing global layout unless requested.
   - If adding new npm packages: require an explicit justification in the git message; prefer existing modules.
+  - After making code changes: run `npm run validate` to ensure all tests pass and the site builds correctly.
 
-- **Do not assume:**
-  - No test harness was found — avoid creating tests without asking the repo owner.
-
-If anything is unclear or you want more detail about a specific area (i18n, content, deploy steps), tell me which section to expand.
+If anything is unclear or you want more detail about a specific area (i18n, content, deploy steps, testing), tell me which section to expand.

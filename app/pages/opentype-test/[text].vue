@@ -15,8 +15,8 @@ async function renderWithOpenType(text: string) {
 	glyphs.value = [];
 	try {
 		const opentype = await import('opentype.js');
-		const font = await new Promise<any>((resolve, reject) => {
-			opentype.load('/fonts/Tajawal-Regular.ttf', (err: any, f: any) => (err ? reject(err) : resolve(f)));
+		const font = await new Promise<Record<string, unknown>>((resolve, reject) => {
+			opentype.load('/fonts/Tajawal-Regular.ttf', (err: unknown, f: unknown) => (err ? reject(err) : resolve(f as Record<string, unknown>)));
 		});
 
 		const normalized = (text ?? '').normalize('NFC');
@@ -41,15 +41,15 @@ async function renderWithOpenType(text: string) {
 			i = j - 1;
 		}
 
-		let x = 0;
+		const x = 0;
 		const out: Array<{ d: string; x: number; width: number; }> = [];
 		// Compute advance widths for each grapheme, then layout RTL: first grapheme on the right.
 		const advances: number[] = [];
 		for(let i = 0;i < graphemes.length;i++) {
 			const g = graphemes[i];
 			const adv = (font.getAdvanceWidth ? font.getAdvanceWidth(g, fontSize.value) : (() => {
-				const ga = font.stringToGlyphs(g);
-				return ga.reduce((s: number, gg: any) => s + (gg.advanceWidth || 0), 0) * (fontSize.value / (font.unitsPerEm || 1000));
+				const ga = font.stringToGlyphs(g) as Array<Record<string, unknown>>;
+				return ga.reduce((s: number, gg: Record<string, unknown>) => s + ((gg.advanceWidth as number) || 0), 0) * (fontSize.value / ((font.unitsPerEm as number) || 1000));
 			})());
 			advances.push(adv);
 		}
@@ -61,28 +61,28 @@ async function renderWithOpenType(text: string) {
 			const w = advances[i] || 0;
 			// position from right: total - cum - w
 			const xpos = total - sumW - w;
-			const path = font.getPath(g, xpos, fontSize.value, fontSize.value, { features: ['liga', 'calt', 'rlig'] });
-			const d = (path as any).toPathData ? (path as any).toPathData(2) : (path as any).toSVG ? (path as any).toSVG() : '';
+			const path = font.getPath(g, xpos, fontSize.value, fontSize.value, { features: ['liga', 'calt', 'rlig'] }) as Record<string, unknown>;
+			const d = (path.toPathData ? (path.toPathData as (arg: number) => string)(2) : path.toSVG ? (path.toSVG as () => string)() : '') as string;
 			out.push({ d, x: xpos, width: w });
 			sumW += w;
 		}
 
 		glyphs.value = out;
-		; (glyphs as any)._totalWidth = x || 300;
+		; (glyphs as unknown)._totalWidth = x || 300;
 
 		// Also create a raw single path for the entire string (no greedy ligature logic)
 		try {
-			const rawP = font.getPath(normalized, 0, fontSize.value, fontSize.value);
-			rawPath.value = (rawP as any).toPathData ? (rawP as any).toPathData(2) : (rawP as any).toSVG ? (rawP as any).toSVG() : '';
+			const rawP = font.getPath(normalized, 0, fontSize.value, fontSize.value) as Record<string, unknown>;
+			rawPath.value = (rawP.toPathData ? (rawP.toPathData as (arg: number) => string)(2) : rawP.toSVG ? (rawP.toSVG as () => string)() : '') as string;
 			rawWidth.value = (font.getAdvanceWidth ? font.getAdvanceWidth(normalized, fontSize.value) : x) || 300;
-		} catch(e) {
+		} catch {
 			rawPath.value = '';
 			rawWidth.value = x || 300;
 		}
 
 		fontLoaded.value = true;
-	} catch(e) {
-		console.error('opentype render error', e);
+	} catch(_e) {
+		console.error('opentype render error', _e);
 		fontLoaded.value = false;
 	}
 }
@@ -95,45 +95,45 @@ watch(input, (v) => renderWithOpenType(v));
 </script>
 <template>
 	<div class="opentype-test"> opentype.js-only test. It looks like it can hot handle Arabic fully even when the text is rendered as single path - diacritics are misplaces (compare to h1 in blue)
-		<input v-model="input" />
-		<h1 style="color: blue;" class="font_family_tajawal">{{ input }}</h1>
-		<div v-if="!fontLoaded">Loading font and rendering (client only)...</div>
-		<div v-else class="svg-comparison">
-			<svg :width="Math.max(300, glyphs.reduce((s, g) => s + g.width, 0))" :height="fontSize + 30" xmlns="http://www.w3.org/2000/svg">
-				<g fill="black" stroke="none">
-					<template v-for="(g, idx) in glyphs" :key="idx">
-						<path :d="g.d" />
-					</template>
-				</g>
-			</svg>
-			<!-- Raw single-path rendering (no greedy processing) - always shown side-by-side -->
-			<svg :width="Math.max(300, rawWidth)" :height="fontSize + 30" xmlns="http://www.w3.org/2000/svg">
-				<g fill="none" stroke="black">
-					<path :d="rawPath" />
-				</g>
-			</svg>
-		</div>
+		<input v-model="input">
+			<h1 style="color: blue;" class="font_family_tajawal">{{ input }}</h1>
+			<div v-if="!fontLoaded">Loading font and rendering (client only)...</div>
+			<div v-else class="svg-comparison">
+				<svg :width="Math.max(300, glyphs.reduce((s, g) => s + g.width, 0))" :height="fontSize + 30" xmlns="http://www.w3.org/2000/svg">
+					<g fill="black" stroke="none">
+						<template v-for="(g, idx) in glyphs" :key="idx">
+							<path :d="g.d" />
+						</template>
+					</g>
+				</svg>
+				<!-- Raw single-path rendering (no greedy processing) - always shown side-by-side -->
+				<svg :width="Math.max(300, rawWidth)" :height="fontSize + 30" xmlns="http://www.w3.org/2000/svg">
+					<g fill="none" stroke="black">
+						<path :d="rawPath" />
+					</g>
+				</svg>
+			</div>
 	</div>
 </template>
 <style scoped>
-.opentype-test {
-	display: flex;
-	flex-direction: column;
-	gap: 0.5rem;
-}
+	.opentype-test {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
 
-.font_family_tajawal {
-	font-family: Tajawal-Regular;
-}
+	.font_family_tajawal {
+		font-family: Tajawal-Regular;
+	}
 
-.svg-comparison {
-	display: flex;
-	gap: 1rem;
-	align-items: flex-start;
-}
+	.svg-comparison {
+		display: flex;
+		gap: 1rem;
+		align-items: flex-start;
+	}
 
-input {
-	padding: 0.4rem;
-	font-size: 1rem;
-}
+	input {
+		padding: 0.4rem;
+		font-size: 1rem;
+	}
 </style>
