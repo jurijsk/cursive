@@ -4,6 +4,8 @@ import type { HarfBuzzAPI, Font } from 'harfbuzzjs/hbjs';
 
 export interface ShapedGlyph {
 	glyphId: number;
+	glyphName: string | null;
+	cluster: number;
 	path: string | null;
 	x: number;
 	y: number;
@@ -82,7 +84,11 @@ export async function shapeText(text: string, fontKey?: string): Promise<ShapeRe
 	const buf = harfbuzz.createBuffer();
 	buf.addText((text ?? '').normalize('NFC'));
 	buf.guessSegmentProperties();
-	harfbuzz.shape(font, buf);
+	// Disable OpenType ligature features so words like الله and لا render as
+	// individual letters that the user can click on. Cursive joining (init /
+	// medi / fina / isol) still applies because those are mandatory script
+	// features, not ligatures.
+	harfbuzz.shape(font, buf, '-liga,-rlig,-dlig');
 	const out = buf.json();
 
 	const glyphs: ShapedGlyph[] = [];
@@ -93,8 +99,12 @@ export async function shapeText(text: string, fontKey?: string): Promise<ShapeRe
 		if(missing) hasMissingGlyphs = true;
 		let path: string | null = null;
 		try { path = font.glyphToPath(g.g); } catch { path = null; }
+		let glyphName: string | null = null;
+		try { glyphName = font.glyphName(g.g); } catch { glyphName = null; }
 		glyphs.push({
 			glyphId: g.g,
+			glyphName,
+			cluster: g.cl,
 			path,
 			x: xCursor + g.dx,
 			y: g.dy,

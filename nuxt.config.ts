@@ -4,7 +4,7 @@ export default defineNuxtConfig({
 	future: { compatibilityVersion: 5 },
 	devtools: { enabled: false },
 	devServer: { port: 3001 },
-	modules: ['@nuxt/fonts', '@nuxt/eslint', '@nuxt/test-utils'],
+	modules: ['@nuxt/fonts', '@nuxt/eslint', '@nuxt/test-utils', '@pinia/nuxt', 'pinia-plugin-persistedstate/nuxt'],
 	css: ['@picocss/pico'],
 	fonts: {
 		families: [
