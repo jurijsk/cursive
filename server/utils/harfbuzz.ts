@@ -40,7 +40,6 @@ interface HbState {
 
 declare global {
 	// pin to globalThis so the singleton survives Nitro HMR in dev
-	// eslint-disable-next-line no-var
 	var __hbState: Promise<HbState> | undefined;
 }
 
