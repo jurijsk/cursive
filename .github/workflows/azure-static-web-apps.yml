@@ -20,6 +20,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Upgrade npm
+        # The lock file is generated locally with npm 11, which correctly
+        # omits optional peerDependencies (e.g. cac/commander under
+        # @bomb.sh/tab). Node 20 ships with npm 10.8, which treats the
+        # same lock as out-of-sync. Bumping CI to npm 11 reconciles them.
+        run: npm install --global npm@latest
       - name: Install dependencies
         run: npm ci
       - name: Build
