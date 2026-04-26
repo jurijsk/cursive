@@ -237,19 +237,6 @@ watch([input, selectedFont], () => {
 			<strong class="ligature-preview">{{ vocalizedPreview }}</strong>
 			<button type="button" class="replace-btn" @click="applyVocalization">Add diacritics</button>
 		</div>
-		<div class="font-picker">
-			<span class="picker-label">Font</span>
-			<button
-				v-for="f in fontOptions"
-				:key="f.key"
-				type="button"
-				:class="{ 'font-btn': true, active: selectedFont === f.key }"
-				@click="selectedFont = f.key"
-			>
-				<span class="font-btn-label">{{ f.label }}</span>
-				<span class="font-btn-sample" :style="{ fontFamily: f.family }">مرحبا</span>
-			</button>
-		</div>
 		<div v-if="hasMissingGlyphs" class="missing-notice">
 			This font doesn't have glyphs for some characters in the text. Try a different font.
 		</div>
@@ -358,6 +345,19 @@ watch([input, selectedFont], () => {
 				<div v-else class="no-letter">No letter information available for this glyph.</div>
 			</div>
 		</aside>
+
+		<div class="font-picker">
+			<span class="picker-label">Font</span>
+			<button
+				v-for="f in fontOptions"
+				:key="f.key"
+				type="button"
+				:class="{ 'font-btn': true, active: selectedFont === f.key }"
+				@click="selectedFont = f.key"
+			>
+				<span class="font-btn-sample" :style="{ fontFamily: f.family }">{{ input }}</span>
+			</button>
+		</div>
 	</div>
 </template>
 <style scoped>
@@ -376,7 +376,7 @@ watch([input, selectedFont], () => {
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.5rem;
-		margin-bottom: 1rem;
+		margin-top: 1.5rem;
 	}
 
 	.picker-label {
@@ -387,10 +387,8 @@ watch([input, selectedFont], () => {
 
 	.font-btn {
 		display: inline-flex;
-		flex-direction: column;
 		align-items: center;
-		gap: 0.15rem;
-		padding: 0.4rem 0.8rem;
+		padding: 0.5rem 0.9rem;
 		border: 1px solid #c8c8c8;
 		border-radius: 0.5rem;
 		background: #fff;
@@ -411,13 +409,8 @@ watch([input, selectedFont], () => {
 		color: #fff;
 	}
 
-	.font-btn-label {
-		font-size: 0.75rem;
-		letter-spacing: 0.02em;
-	}
-
 	.font-btn-sample {
-		font-size: 1.3rem;
+		font-size: 1.4rem;
 		direction: rtl;
 	}
 
