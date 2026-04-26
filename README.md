@@ -137,7 +137,7 @@ single Azure Function under `.output/server`.
    Either way, Azure sets the `AZURE_STATIC_WEB_APPS_API_TOKEN` secret on
    the repo automatically — that's what matters. Our workflow reads it via
    `${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}`.
-5. **First deploy** runs automatically once the repo is connected.
+5. **First deploy** needs a manual trigger — see _Triggering a deploy_ below.
 
 ### What's deployed where
 
@@ -237,14 +237,22 @@ a few minutes); the first request can be slow while that happens.
 
 ### Triggering a deploy
 
-The deploy workflow runs on every push to `master`, on PR open / sync /
-close, and on manual `workflow_dispatch`. To redeploy without a code
-change (e.g. after rotating the deploy token):
+Deploys are **manual only** (`workflow_dispatch`). Pushing to `master`
+does **not** deploy — the assumption is that not every commit should
+hit production, so you trigger explicitly when a change is ready:
 
 ```powershell
 gh workflow run "Azure Static Web Apps CI/CD" --ref master
 gh run watch --repo jurijsk/cursive
 ```
+
+The same trigger is reachable as a "Run workflow" button on the
+workflow's page in GitHub if you'd rather use the UI.
+
+The post-deploy smoke test (last step of the workflow) hits `/` and
+`/api/shape` on the freshly deployed default hostname and fails the
+run if either regresses, so a manual dispatch still gives you that
+safety net.
 
 ## Project layout
 
