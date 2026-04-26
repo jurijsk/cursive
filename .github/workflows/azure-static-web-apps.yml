@@ -49,6 +49,13 @@ jobs:
           # WASM/fonts in chunks/raw/ are unaffected (they're code, not deps).
           app_location: ".output/public"
           api_location: ".output/server"
+          # Nitro writes staticwebapp.config.json at the repo root, but the
+          # deploy action defaults to looking inside app_location. Without
+          # this override the routing config (which rewrites / and unknown
+          # paths to /api/server) is never applied and SWA falls back to
+          # the empty Nitro-generated index.html stub — every page returns
+          # 200 with 0 bytes and the SSR function is never invoked.
+          config_file_location: "/"
           skip_app_build: true
 
   close_pull_request_job:
