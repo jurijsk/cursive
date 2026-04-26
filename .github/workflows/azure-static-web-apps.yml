@@ -37,13 +37,13 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          app_location: "/"
-          # The Nitro 'azure' (azure-swa) preset emits the Azure Functions app
-          # at .output/server (host.json at root, function under functions/).
-          # Pointing api_location here is what wires /api/* and SSR through
-          # the Function. An empty value would deploy a static-only site.
+          # With skip_app_build: true the action ignores output_location and
+          # treats app_location as the already-built artifacts directory, so
+          # point it at .output/public directly. api_location stays relative
+          # to the repo root and points at the Nitro-emitted Functions app
+          # (host.json at root of .output/server, function under functions/).
+          app_location: ".output/public"
           api_location: ".output/server"
-          output_location: ".output/public"
           skip_app_build: true
           skip_api_build: true
 
