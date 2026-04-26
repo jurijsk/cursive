@@ -1,5 +1,4 @@
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { useStorage } from 'nitropack/runtime';
 import type { HarfBuzzAPI, Font } from 'harfbuzzjs/hbjs';
 
 export interface ShapedGlyph {
@@ -45,20 +44,40 @@ declare global {
 	var __hbState: Promise<HbState> | undefined;
 }
 
+function toArrayBuffer(value: unknown): ArrayBuffer {
+	if(value instanceof ArrayBuffer) return value;
+	if(value instanceof Uint8Array) return value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength);
+	throw new Error('expected ArrayBuffer or Uint8Array from server asset storage');
+}
+
+async function loadAsset(path: string): Promise<ArrayBuffer> {
+	// Nitro's server-asset storage. `serverAssets` in nuxt.config.ts bundles
+	// public/ into the function so this resolves at runtime in Azure Functions
+	// where process.cwd() does not point to the source tree.
+	const raw = await useStorage('assets:public').getItemRaw(path);
+	if(raw == null) throw new Error(`server asset not found: ${path}`);
+	return toArrayBuffer(raw);
+}
+
 async function init(): Promise<HbState> {
-	const hbMod = await import('harfbuzzjs/hb');
-	const hbjsMod = await import('harfbuzzjs/hbjs');
+	// Explicit .js extensions: harfbuzzjs ships no `exports` map, and Node
+	// ESM does not auto-append extensions for package subpath imports in the
+	// production function (where the package is hoisted into node_modules
+	// rather than being inlined by the bundler).
+	const hbMod = await import('harfbuzzjs/hb.js');
+	const hbjsMod = await import('harfbuzzjs/hbjs.js');
 	const factory = (hbMod.default ?? hbMod) as typeof import('harfbuzzjs/hb').default;
 	const wrap = (hbjsMod.default ?? hbjsMod) as typeof import('harfbuzzjs/hbjs').default;
 
-	const runtime = await factory();
+	// Provide hb.wasm as a buffer. Skipping locateFile / readFileSync avoids
+	// the bundler-stripped hb.wasm next to hb.js in the function output.
+	const wasmBinary = await loadAsset('hb.wasm');
+	const runtime = await factory({ wasmBinary });
 	const harfbuzz = wrap(runtime);
 
 	const fonts = new Map<string, { font: Font; upem: number; }>();
 	for(const meta of FONTS) {
-		const fontPath = join(process.cwd(), 'public', 'fonts', meta.file);
-		const buf = await readFile(fontPath);
-		const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+		const ab = await loadAsset(`fonts/${meta.file}`);
 		const blob = harfbuzz.createBlob(ab);
 		const face = harfbuzz.createFace(blob, 0);
 		const font = harfbuzz.createFont(face);
