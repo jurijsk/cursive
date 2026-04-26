@@ -34,6 +34,7 @@ useHead({
 });
 
 const route = useRoute();
+const router = useRouter();
 const param = (route.params.text as string | undefined) ?? '';
 const input = ref(param || 'مرحبا');
 
@@ -220,7 +221,10 @@ function applyVocalization() {
 let timer: ReturnType<typeof setTimeout> | null = null;
 watch([input, selectedFont], () => {
 	if(timer) clearTimeout(timer);
-	timer = setTimeout(() => { refresh(); }, 200);
+	timer = setTimeout(() => {
+		refresh();
+		router.replace({ params: { text: input.value } });
+	}, 200);
 });
 </script>
 <template>
