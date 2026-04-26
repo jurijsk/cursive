@@ -6,6 +6,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches: [master]
+  workflow_dispatch:
 
 jobs:
   build_and_deploy_job:
@@ -57,6 +58,60 @@ jobs:
           # 200 with 0 bytes and the SSR function is never invoked.
           config_file_location: "/"
           skip_app_build: true
+
+      - name: Post-deploy smoke test
+        # Catches the regressions hit on the road to first deploy:
+        #   - SSR returning empty body (routing config missing → fallback
+        #     to empty Nitro index.html stub)
+        #   - /api/shape failing (server asset bundling broken, function
+        #     language detection missing, etc.)
+        # Uses the deploy action's static_web_app_url output so it picks up
+        # both production and per-PR preview URLs without hardcoding.
+        run: |
+          set -u
+          URL="${{ steps.builddeploy.outputs.static_web_app_url }}"
+          if [ -z "$URL" ]; then
+            echo "FAIL: deploy step did not output static_web_app_url"
+            exit 1
+          fi
+          case "$URL" in https://*) ;; *) URL="https://$URL" ;; esac
+          echo "smoke-testing $URL"
+
+          # SWA propagation + Function cold start can take ~30-60s after the
+          # deploy step reports success. Poll for an HTTP 200 first.
+          for i in $(seq 1 12); do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL/")
+            if [ "$CODE" = "200" ]; then break; fi
+            echo "  attempt $i: $CODE — waiting 5s"
+            sleep 5
+          done
+
+          # 1) SSR-rendered root: must return non-trivial HTML with a title.
+          HTML=$(curl --fail --silent --show-error "$URL/")
+          SIZE=${#HTML}
+          if [ "$SIZE" -lt 1000 ]; then
+            echo "FAIL: GET / returned $SIZE bytes (expected >1000 — SSR likely not running)"
+            echo "$HTML" | head -c 500
+            exit 1
+          fi
+          if ! echo "$HTML" | grep -qE '<title>[^<]+</title>'; then
+            echo "FAIL: GET / returned HTML without a <title> tag"
+            exit 1
+          fi
+          echo "ok: GET / -> $SIZE bytes, title rendered"
+
+          # 2) /api/shape: must shape Arabic input into ≥5 glyphs.
+          RESP=$(curl --fail --silent --show-error -X POST \
+            -H 'content-type: application/json; charset=utf-8' \
+            --data-raw '{"text":"مرحبا","font":"tajawal"}' \
+            "$URL/api/shape")
+          GLYPHS=$(echo "$RESP" | jq -r '.glyphs | length // 0')
+          if [ "$GLYPHS" -lt 5 ]; then
+            echo "FAIL: POST /api/shape returned $GLYPHS glyphs (expected >=5)"
+            echo "$RESP" | head -c 500
+            exit 1
+          fi
+          echo "ok: POST /api/shape -> $GLYPHS glyphs"
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'

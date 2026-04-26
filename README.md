@@ -205,7 +205,46 @@ bash scripts/azure/create-swa.sh --subscription <id-or-name>
 Optional flags / parameters with defaults: resource group `cursive-rg`,
 name `cursive`, location `westeurope`, repo `jurijsk/cursive`. Re-running
 is safe — both `az group create` and `az staticwebapp create` are
-no-ops if the resource already exists.
+no-ops if the resource already exists, and the same goes for the DNS
+and hostname-binding steps below.
+
+#### Custom domain (optional)
+
+Pass `--hostname` (and `--dns-zone-rg`, the resource group of an Azure
+DNS zone in the same subscription) to also wire up a custom subdomain.
+The script upserts a CNAME in the parent zone pointing at the SWA's
+default hostname and binds the hostname on the SWA via
+`cname-delegation` validation:
+
+```powershell
+# bash
+bash scripts/azure/create-swa.sh --subscription <id-or-name> \
+  --hostname cursive.textjoint.com --dns-zone-rg textjoint
+
+# PowerShell
+.\scripts\azure\create-swa.ps1 -Subscription <id-or-name> `
+  -Hostname cursive.textjoint.com -DnsZoneRg textjoint
+```
+
+The zone name is derived from the hostname (everything after the first
+dot), so the example above expects a `textjoint.com` DNS zone in the
+`textjoint` resource group. Subdomains only — apex domains need
+TXT-token validation, which has a different command shape and isn't
+handled by the script.
+
+After binding, Azure provisions the TLS cert in the background (usually
+a few minutes); the first request can be slow while that happens.
+
+### Triggering a deploy
+
+The deploy workflow runs on every push to `master`, on PR open / sync /
+close, and on manual `workflow_dispatch`. To redeploy without a code
+change (e.g. after rotating the deploy token):
+
+```powershell
+gh workflow run "Azure Static Web Apps CI/CD" --ref master
+gh run watch --repo jurijsk/cursive
+```
 
 ## Project layout
 

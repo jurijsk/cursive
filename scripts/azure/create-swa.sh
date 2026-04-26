@@ -27,6 +27,13 @@
 #     --name           cursive
 #     --location       westeurope
 #     --repo           jurijsk/cursive
+#     --hostname       <fqdn>          e.g. cursive.textjoint.com — when set,
+#                                      adds a CNAME in the parent zone and
+#                                      binds the hostname on the SWA.
+#     --dns-zone-rg    <rg>            resource group of the DNS zone (required
+#                                      with --hostname). Zone name is derived
+#                                      from the hostname (everything after the
+#                                      first dot).
 
 set -euo pipefail
 
@@ -35,6 +42,8 @@ NAME="cursive"
 LOCATION="westeurope"
 REPO="jurijsk/cursive"
 SUBSCRIPTION=""
+HOSTNAME_FQDN=""
+DNS_ZONE_RG=""
 
 while [[ $# -gt 0 ]]; do
 	case "$1" in
@@ -43,8 +52,10 @@ while [[ $# -gt 0 ]]; do
 		--name)           NAME="$2"; shift 2 ;;
 		--location)       LOCATION="$2"; shift 2 ;;
 		--repo)           REPO="$2"; shift 2 ;;
+		--hostname)       HOSTNAME_FQDN="$2"; shift 2 ;;
+		--dns-zone-rg)    DNS_ZONE_RG="$2"; shift 2 ;;
 		-h|--help)
-			sed -n '2,30p' "$0"
+			sed -n '2,38p' "$0"
 			exit 0
 			;;
 		*)
@@ -110,11 +121,61 @@ HOST=$(az staticwebapp show \
 	--resource-group "$RESOURCE_GROUP" \
 	--query "defaultHostname" -o tsv)
 
+# --- Optional: custom hostname binding --------------------------------------
+# When --hostname is given, idempotently create a CNAME in the parent zone
+# pointing at the SWA's default hostname, then bind the hostname on the SWA
+# using cname-delegation validation. Only subdomains are supported here —
+# apex domains need TXT-token validation (different command shape).
+if [[ -n "$HOSTNAME_FQDN" ]]; then
+	if [[ -z "$DNS_ZONE_RG" ]]; then
+		echo "ERROR: --hostname requires --dns-zone-rg" >&2
+		exit 1
+	fi
+	# "cursive.textjoint.com" needs at least two dots to have both a record
+	# label and a parent zone. One-dot FQDNs are apex and not handled here.
+	if [[ "$HOSTNAME_FQDN" != *.*.* ]]; then
+		echo "ERROR: $HOSTNAME_FQDN looks like an apex domain; only subdomains are supported" >&2
+		exit 1
+	fi
+	RECORD="${HOSTNAME_FQDN%%.*}"
+	ZONE="${HOSTNAME_FQDN#*.}"
+
+	echo "==> verifying DNS zone $ZONE in $DNS_ZONE_RG"
+	az network dns zone show --name "$ZONE" --resource-group "$DNS_ZONE_RG" --query "name" -o tsv >/dev/null
+
+	echo "==> upserting CNAME $RECORD.$ZONE -> $HOST (TTL 300)"
+	# set-record creates the record set if missing and replaces the alias if
+	# it already exists, so this stays idempotent on re-runs.
+	az network dns record-set cname set-record \
+		--resource-group "$DNS_ZONE_RG" \
+		--zone-name "$ZONE" \
+		--record-set-name "$RECORD" \
+		--cname "$HOST" \
+		--ttl 300 -o none
+
+	echo "==> binding $HOSTNAME_FQDN on SWA $NAME"
+	BOUND=$(az staticwebapp hostname list --name "$NAME" --resource-group "$RESOURCE_GROUP" \
+		--query "[?name=='$HOSTNAME_FQDN'] | length(@)" -o tsv)
+	if [[ "$BOUND" != "0" ]]; then
+		echo "  already bound — skipping"
+	else
+		az staticwebapp hostname set \
+			--name "$NAME" \
+			--resource-group "$RESOURCE_GROUP" \
+			--hostname "$HOSTNAME_FQDN" \
+			--validation-method cname-delegation -o none
+		echo "  bound (Azure provisions the TLS cert in the background; first hit can be slow)"
+	fi
+fi
+
 echo
 echo "✓ done"
 echo "  resource group:  $RESOURCE_GROUP"
 echo "  static web app:  $NAME"
 echo "  url:             https://$HOST"
+if [[ -n "$HOSTNAME_FQDN" ]]; then
+	echo "  custom url:      https://$HOSTNAME_FQDN"
+fi
 echo
 echo "next: push any commit to master — the workflow will pick up the secret"
 echo "and deploy. tail it with:  gh run watch --repo $REPO"
