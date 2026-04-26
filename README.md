@@ -161,6 +161,52 @@ function sandbox doesn't have a meaningful cwd. Adding new fonts means
 dropping them in `public/fonts/` and updating the `FONTS` table; they get
 picked up automatically.
 
+### Node version
+
+`engines.node` in [package.json](package.json) is pinned to `"20"` and
+this is intentional. Nitro's `azure-swa` preset reads that field at
+build time and writes a matching `apiRuntime: node:20` into the
+generated `staticwebapp.config.json`, which tells Azure which runtime
+to host the Function on. The preset only recognises the literal
+strings `"16"`, `"18"`, and `"20"` (newer values fall back to `"18"`),
+so this is the right pin for "latest the toolchain will emit". Azure
+SWA supports `node:18` and `node:20` stably today; `node:22` is rolling
+out but Nitro at the version we're on won't produce it.
+
+You can develop locally on a newer Node (Node 24, etc.) — npm prints
+an `EBADENGINE` warning but the install and build succeed. The pin
+exists for the deploy artifact, not to constrain local dev.
+
+### Provisioning the Azure resource
+
+The repo ships a script that creates the resource group and Static Web
+App in your Azure subscription, fetches the deploy token, and stores
+it as the `AZURE_STATIC_WEB_APPS_API_TOKEN` GitHub secret so the
+workflow above can deploy. The SWA is created **without** a GitHub
+source so Azure doesn't auto-write a competing workflow file.
+
+Prereqs (one-time, prompt you in a browser):
+
+```powershell
+az login
+gh auth login
+```
+
+Then:
+
+```powershell
+# bash version (any *nix or Git Bash)
+bash scripts/azure/create-swa.sh --subscription <id-or-name>
+
+# or PowerShell
+.\scripts\azure\create-swa.ps1 -Subscription <id-or-name>
+```
+
+Optional flags / parameters with defaults: resource group `cursive-rg`,
+name `cursive`, location `westeurope`, repo `jurijsk/cursive`. Re-running
+is safe — both `az group create` and `az staticwebapp create` are
+no-ops if the resource already exists.
+
 ## Project layout
 
 ```
