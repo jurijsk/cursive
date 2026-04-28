@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ key: 'cursive-page' });
+
 import { storeToRefs } from 'pinia';
 import { letters, type Dialect } from '~/data/letters';
 import { findVocalizableMatches, applySpellings } from '~/data/spellings';
@@ -73,7 +75,8 @@ const examples: { label: string; text: string; }[] = [
 const DESIRED_EM = 120; // px em size for rendering
 
 const { data, refresh, error, status } = await useAsyncData<ShapeResult>('shape-text', () =>
-	$fetch<ShapeResult>('/api/shape', { method: 'POST', body: { text: input.value, font: selectedFont.value } })
+	$fetch<ShapeResult>('/api/shape', { method: 'POST', body: { text: input.value, font: selectedFont.value } }),
+	{ watch: [] }
 );
 
 // Sync the picker to whatever font the server actually used
@@ -218,13 +221,25 @@ function applyVocalization() {
 	input.value = applySpellings(input.value);
 }
 
-let timer: ReturnType<typeof setTimeout> | null = null;
+let shapeTimer: ReturnType<typeof setTimeout> | null = null;
 watch([input, selectedFont], () => {
-	if(timer) clearTimeout(timer);
-	timer = setTimeout(() => {
+	if(shapeTimer) clearTimeout(shapeTimer);
+	shapeTimer = setTimeout(() => {
 		refresh();
-		router.replace({ params: { text: input.value } });
 	}, 200);
+});
+
+let urlTimer: ReturnType<typeof setTimeout> | null = null;
+watch(input, () => {
+	if(urlTimer) clearTimeout(urlTimer);
+	urlTimer = setTimeout(() => {
+		router.replace({ params: { text: input.value } });
+	}, 600);
+});
+
+onUnmounted(() => {
+	if(shapeTimer) clearTimeout(shapeTimer);
+	if(urlTimer) clearTimeout(urlTimer);
 });
 </script>
 <template>
@@ -269,7 +284,6 @@ watch([input, selectedFont], () => {
 				</g>
 			</g>
 		</svg>
-		<div v-if="status === 'pending'">Shaping...</div>
 
 		<aside v-if="selection" class="info-panel">
 			<div class="panel-body">

@@ -4,5 +4,8 @@
 		"Harf",
 		"harfbuzz",
 		"harfbuzzjs"
-	]
+	],
+	"chat.tools.terminal.autoApprove": {
+		"npx playwright": true
+	}
 }
