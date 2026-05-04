@@ -1,0 +1,96 @@
+/* base.css — global resets and typography baked on top of the
+ * Cursive design system tokens. Components only reference
+ * semantic tokens defined in tokens.css.
+ */
+
+/* Arabic display fonts — bundled in public/fonts/ and loaded explicitly so
+ * the runtime font picker can switch between them without depending on
+ * provider heuristics. UI fonts (Inter, Fraunces, JetBrains Mono, Readex Pro)
+ * are loaded by @nuxt/fonts via google provider — declared in nuxt.config.ts. */
+@font-face {
+	font-family: 'Tajawal';
+	src: url('/fonts/Tajawal-Regular.ttf') format('truetype');
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Amiri';
+	src: url('/fonts/Amiri-Regular.ttf') format('truetype');
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Noto Naskh Arabic';
+	src: url('/fonts/NotoNaskhArabic-Regular.ttf') format('truetype');
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Reem Kufi';
+	src: url('/fonts/ReemKufi-Regular.ttf') format('truetype');
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	font-family: var(--f_ui);
+	font-size: 14px;
+	line-height: 1.5;
+	color: var(--primary_text);
+	background: var(--page_bg);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4 {
+	font-family: var(--f_display);
+	font-weight: 400;
+	letter-spacing: -0.01em;
+	margin: 0 0 0.4em;
+	color: var(--primary_text);
+}
+
+h1 { font-size: 2.25rem; letter-spacing: -0.02em; }
+h2 { font-size: 1.625rem; }
+h3 { font-size: 1.25rem; }
+
+p { margin: 0 0 0.6em; }
+
+a { color: var(--accent_primary_hi); }
+
+input, button, select, textarea {
+	font: inherit;
+	color: inherit;
+}
+
+/* Eyebrow / kicker label used across the design system */
+.label-eyebrow {
+	font-family: var(--f_mono);
+	font-size: 10px;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--secondary_text);
+}
+
+.mono {
+	font-family: var(--f_mono);
+	font-size: 11px;
+	letter-spacing: 0.02em;
+}
+
+.ar {
+	font-family: var(--current_arabic_font, var(--f_arabic));
+	direction: rtl;
+	unicode-bidi: isolate;
+}

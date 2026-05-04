@@ -1,0 +1,160 @@
+/* tokens.css — Cursive design system color tokens
+ *
+ * Two layers:
+ *   1) BASE COLORS   — named after colour, tone & association.
+ *                      Prefixed with an extra '-' (so: ----name) to flag that
+ *                      they must NEVER be referenced from a component.
+ *                      They exist only to define semantic colors below.
+ *   2) SEMANTIC COLORS — named after their function (e.g. --primary_button_bg).
+ *                      Always reference a base color via var().
+ *                      These are the only tokens components may use.
+ */
+
+:root {
+  /* ─── 1 · Base colors — palette ingredients only ─────────── */
+
+  /* Ink — body, headings, deep surfaces */
+  ----deep_cypress_ink:        #1a2420;
+  ----moss_shadow_ink:         #2f3d36;
+  ----sage_dust_ink:           #56685e;
+  ----driftwood_grey_ink:      #7a8b80;
+  ----lichen_grey:             #a3b1a7;
+  ----river_stone_grey:        #c8d1c9;
+  ----morning_mist_grey:       #e2e7e2;
+
+  /* Paper — backgrounds & surfaces */
+  ----parchment_white:         #fbfaf6;
+  ----oat_paper:               #f5f3ec;
+  ----flax_paper:              #ecebe2;
+  ----linen_paper:             #e0dfd3;
+
+  /* Sage — the brand colour family */
+  ----dew_sage:                #eef3ee;
+  ----young_olive:             #d8e3d8;
+  ----meadow_sage:             #9ab69c;
+  ----oasis_sage:              #5b8466;
+  ----juniper_sage:            #466a52;
+  ----cypress_green:           #34503e;
+  ----forest_floor:            #1d2e24;
+
+  /* Saffron — reserved, earned moments */
+  ----saffron_silk:            #f5e7c8;
+  ----turmeric_gold:           #c8923a;
+
+  /* Functional — status colours */
+  ----olive_leaf_green:        #4f8a5c;
+  ----amber_warning:           #b07c2a;
+  ----pomegranate_red:         #a64338;
+
+  /* Misc base hues used in tinted badges/borders */
+  ----shell_pink:              #e7c8c4;
+  ----wheat_beige:             #f8eed3;
+  ----oak_bark_brown:          #7a5a14;
+  ----sage_haze:               #e3eee3;
+  ----moss_deep:               #2e5d3a;
+
+  /* ─── 2 · Semantic colors — what components reference ────── */
+
+  /* Surface */
+  --page_bg:                   var(----oat_paper);
+  --surface_bg:                var(----parchment_white);
+  --sunken_bg:                 var(----flax_paper);
+  --inverse_surface_bg:        var(----deep_cypress_ink);
+
+  /* Text */
+  --primary_text:              var(----deep_cypress_ink);
+  --secondary_text:            var(----sage_dust_ink);
+  --tertiary_text:             var(----driftwood_grey_ink);
+  --muted_text:                var(----lichen_grey);
+  --inverse_text:              var(----parchment_white);
+  --on_primary_text:           var(----parchment_white);
+  --on_inverse_muted_text:     var(----saffron_silk);
+
+  /* Stroke / divider */
+  --subtle_stroke:             var(----morning_mist_grey);
+  --strong_stroke:             var(----river_stone_grey);
+  --divider_stroke:            var(----flax_paper);
+
+  /* Primary button (sage CTA) */
+  --primary_button_bg:         var(----oasis_sage);
+  --hover_primary_button_bg:   var(----juniper_sage);
+  --pressed_primary_button_bg: var(----cypress_green);
+  --primary_button_border:     var(----juniper_sage);
+  --primary_button_text:       var(----parchment_white);
+
+  /* Secondary button */
+  --secondary_button_bg:           var(----parchment_white);
+  --hover_secondary_button_bg:     var(----oat_paper);
+  --secondary_button_border:       var(----river_stone_grey);
+  --secondary_button_text:         var(----deep_cypress_ink);
+
+  /* Quiet button (sage tinted) */
+  --quiet_button_bg:           var(----dew_sage);
+  --hover_quiet_button_bg:     var(----young_olive);
+  --quiet_button_border:       var(----young_olive);
+  --quiet_button_text:         var(----cypress_green);
+
+  /* Ghost / danger */
+  --ghost_button_text:         var(----moss_shadow_ink);
+  --danger_button_text:        var(----pomegranate_red);
+  --danger_button_border:      var(----shell_pink);
+
+  /* Field */
+  --field_bg:                  var(----parchment_white);
+  --field_border:              var(----river_stone_grey);
+  --focus_field_border:        var(----oasis_sage);
+  --focus_field_ring:          rgba(91, 132, 102, 0.18);
+  --error_field_border:        var(----pomegranate_red);
+  --error_field_ring:          rgba(166, 67, 56, 0.15);
+
+  /* Accent */
+  --accent_primary:                var(----oasis_sage);
+  --accent_primary_hi:             var(----cypress_green);
+  --accent_primary_quiet:          var(----dew_sage);
+  --accent_primary_quiet_border:   var(----young_olive);
+  --accent_honor:                  var(----turmeric_gold);
+  --accent_honor_quiet:            var(----saffron_silk);
+
+  /* Progress */
+  --progress_track_bg:         var(----flax_paper);
+  --progress_fill_bg:          var(----oasis_sage);
+  --progress_fill_inverse_bg:  var(----meadow_sage);
+
+  /* Badges (paired bg + text) */
+  --badge_neutral_bg:          var(----flax_paper);
+  --badge_neutral_text:        var(----moss_shadow_ink);
+  --badge_sage_bg:             var(----dew_sage);
+  --badge_sage_text:           var(----cypress_green);
+  --badge_saffron_bg:          var(----wheat_beige);
+  --badge_saffron_text:        var(----oak_bark_brown);
+  --badge_success_bg:          var(----sage_haze);
+  --badge_success_text:        var(----moss_deep);
+
+  /* Status */
+  --success_color:             var(----olive_leaf_green);
+  --warn_color:                var(----amber_warning);
+  --error_color:               var(----pomegranate_red);
+
+  /* Lesson tile mastered */
+  --tile_done_bg:              var(----dew_sage);
+  --tile_done_border:          var(----young_olive);
+
+  /* Streak day */
+  --streak_active_bg:          var(----turmeric_gold);
+  --streak_today_border:       var(----oasis_sage);
+
+  /* Letter form highlight */
+  --letter_form_active_bg:     var(----dew_sage);
+  --letter_form_active_border: var(----young_olive);
+  --letter_form_active_text:   var(----cypress_green);
+
+  /* ─── 3 · Type families ──────────────────────────────────
+   * @nuxt/fonts scans these var() references in CSS, finds the named
+   * families in nuxt.config.ts, and emits the appropriate @font-face
+   * rules + preload hints. Components reference only these tokens.
+   */
+  --f_ui:      'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --f_display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --f_mono:    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --f_arabic:  'Readex Pro', 'Tajawal', 'Amiri', 'Noto Naskh Arabic', system-ui, sans-serif;
+}

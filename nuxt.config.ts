@@ -21,13 +21,17 @@ export default defineNuxtConfig({
 		]
 	},
 	modules: ['@nuxt/fonts', '@nuxt/eslint', '@nuxt/test-utils', '@pinia/nuxt', 'pinia-plugin-persistedstate/nuxt'],
-	css: ['@picocss/pico'],
+	css: ['~/assets/tokens.css', '~/assets/base.css'],
 	fonts: {
+		// UI families served via @nuxt/fonts (google provider). Arabic display
+		// families are loaded by explicit @font-face declarations in
+		// app/assets/base.css because they live in public/fonts/ and are
+		// chosen at runtime via the font picker.
 		families: [
-			{ name: 'Tajawal', src: '/fonts/Tajawal-Regular.ttf' },
-			{ name: 'Amiri', src: '/fonts/Amiri-Regular.ttf' },
-			{ name: 'Noto Naskh Arabic', src: '/fonts/NotoNaskhArabic-Regular.ttf' },
-			{ name: 'Reem Kufi', src: '/fonts/ReemKufi-Regular.ttf' }
+			{ name: 'Inter', provider: 'google', weights: [300, 400, 500, 600, 700] },
+			{ name: 'Readex Pro', provider: 'google', weights: [300, 400, 500, 600, 700] },
+			{ name: 'Fraunces', provider: 'google', weights: [300, 400, 500] },
+			{ name: 'JetBrains Mono', provider: 'google', weights: [400, 500] }
 		]
 	}
 });

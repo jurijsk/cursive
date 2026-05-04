@@ -26,7 +26,6 @@
 		"@nuxt/eslint": "^1.15.1",
 		"@nuxt/fonts": "^0.13.0",
 		"@nuxt/test-utils": "^4.0.0",
-		"@picocss/pico": "^2.1.1",
 		"@pinia/nuxt": "^0.11.3",
 		"harfbuzzjs": "^0.7.0",
 		"nuxt": "^4.3.0",

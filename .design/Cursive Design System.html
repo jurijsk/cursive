@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cursive — Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&display=swap" rel="stylesheet" />
+
+<style>
+  :root {
+    /* ── Cursive · Color tokens ──────────────────────────────────
+       Two layers:
+       1) BASE COLORS — named after the colour, tone & association.
+          Prefixed with an extra '-' (so: ----name) to signal that they
+          must NEVER be referenced from a component. They exist only to
+          define semantic colors below.
+       2) SEMANTIC COLORS — named after their function. Always reference
+          a base color via var(). These are the only tokens components
+          may use.
+       ─────────────────────────────────────────────────────────── */
+
+    /* 1 · Base colors — palette ingredients only */
+    ----deep_cypress_ink:        #1a2420;
+    ----moss_shadow_ink:         #2f3d36;
+    ----sage_dust_ink:           #56685e;
+    ----driftwood_grey_ink:      #7a8b80;
+    ----lichen_grey:             #a3b1a7;
+    ----river_stone_grey:        #c8d1c9;
+    ----morning_mist_grey:       #e2e7e2;
+
+    ----parchment_white:         #fbfaf6;
+    ----oat_paper:               #f5f3ec;
+    ----flax_paper:              #ecebe2;
+    ----linen_paper:             #e0dfd3;
+
+    ----dew_sage:                #eef3ee;
+    ----young_olive:             #d8e3d8;
+    ----meadow_sage:             #9ab69c;
+    ----oasis_sage:              #5b8466;
+    ----juniper_sage:            #466a52;
+    ----cypress_green:           #34503e;
+    ----forest_floor:            #1d2e24;
+
+    ----saffron_silk:            #f5e7c8;
+    ----turmeric_gold:           #c8923a;
+
+    ----olive_leaf_green:        #4f8a5c;
+    ----amber_warning:           #b07c2a;
+    ----pomegranate_red:         #a64338;
+
+    /* 2 · Semantic colors — what components reference */
+
+    /* Surface */
+    --page_bg:                   var(----oat_paper);
+    --surface_bg:                var(----parchment_white);
+    --sunken_bg:                 var(----flax_paper);
+    --inverse_surface_bg:        var(----deep_cypress_ink);
+
+    /* Text */
+    --primary_text:              var(----deep_cypress_ink);
+    --secondary_text:            var(----sage_dust_ink);
+    --tertiary_text:             var(----driftwood_grey_ink);
+    --muted_text:                var(----lichen_grey);
+    --inverse_text:              var(----parchment_white);
+    --on_primary_text:           var(----parchment_white);
+    --on_inverse_muted_text:     var(----saffron_silk);
+
+    /* Stroke / divider */
+    --subtle_stroke:             var(----morning_mist_grey);
+    --strong_stroke:             var(----lichen_grey);
+    --divider_stroke:            var(----flax_paper);
+
+    /* Primary button (sage CTA) */
+    --primary_button_bg:         var(----oasis_sage);
+    --hover_primary_button_bg:   var(----juniper_sage);
+    --pressed_primary_button_bg: var(----cypress_green);
+    --primary_button_border:     var(----juniper_sage);
+    --primary_button_text:       var(----parchment_white);
+
+    /* Secondary button */
+    --secondary_button_bg:       var(----parchment_white);
+    --hover_secondary_button_bg: var(----oat_paper);
+    --secondary_button_border:   var(----river_stone_grey);
+    --secondary_button_text:     var(----deep_cypress_ink);
+
+    /* Quiet button (sage tinted) */
+    --quiet_button_bg:           var(----dew_sage);
+    --hover_quiet_button_bg:     var(----young_olive);
+    --quiet_button_border:       var(----young_olive);
+    --quiet_button_text:         var(----cypress_green);
+
+    /* Ghost / danger */
+    --ghost_button_text:         var(----moss_shadow_ink);
+    --danger_button_text:        var(----pomegranate_red);
+    --danger_button_border:      #e7c8c4;
+
+    /* Field */
+    --field_bg:                  var(----parchment_white);
+    --field_border:              var(----river_stone_grey);
+    --focus_field_border:        var(----oasis_sage);
+    --focus_field_ring:          rgba(91,132,102,.18);
+    --error_field_border:        var(----pomegranate_red);
+    --error_field_ring:          rgba(166,67,56,.15);
+
+    /* Accent */
+    --accent_primary:            var(----oasis_sage);
+    --accent_primary_hi:         var(----cypress_green);
+    --accent_primary_quiet:      var(----dew_sage);
+    --accent_primary_quiet_border: var(----young_olive);
+    --accent_honor:              var(----turmeric_gold);
+    --accent_honor_quiet:        var(----saffron_silk);
+
+    /* Progress */
+    --progress_track_bg:         var(----flax_paper);
+    --progress_fill_bg:          var(----oasis_sage);
+    --progress_fill_inverse_bg:  var(----meadow_sage);
+
+    /* Badges */
+    --badge_neutral_bg:          var(----flax_paper);
+    --badge_neutral_text:        var(----moss_shadow_ink);
+    --badge_sage_bg:             var(----dew_sage);
+    --badge_sage_text:           var(----cypress_green);
+    --badge_saffron_bg:          #f8eed3;
+    --badge_saffron_text:        #7a5a14;
+    --badge_success_bg:          #e3eee3;
+    --badge_success_text:        #2e5d3a;
+
+    /* Status */
+    --success_color:             var(----olive_leaf_green);
+    --warn_color:                var(----amber_warning);
+    --error_color:               var(----pomegranate_red);
+
+    /* Type */
+    /* Type */
+    --f_arabic: 'Readex Pro', system-ui, sans-serif;
+    --f_ui: 'Inter', system-ui, -apple-system, sans-serif;
+    --f_display: 'Fraunces', Georgia, serif;
+    --f_mono: 'JetBrains Mono', ui-monospace, monospace;
+
+    /* Radius */
+    --r_1: 4px;
+    --r_2: 8px;
+    --r_3: 12px;
+    --r_4: 16px;
+    --r_5: 16px;
+    --r_pill: 999px;
+    --r_button: 8px;
+
+    /* Elevation */
+    --e_1: 0 1px 2px rgba(26,36,32,.06);
+    --e_2: 0 2px 8px rgba(26,36,32,.08), 0 1px 2px rgba(26,36,32,.04);
+    --e_3: 0 8px 24px rgba(26,36,32,.10), 0 2px 6px rgba(26,36,32,.06);
+    --e_inset: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -1px 0 rgba(26,36,32,.04);
+  }
+
+  html, body { margin:0; padding:0; }
+  body {
+    font-family: var(--f_ui);
+    color: var(--primary_text);
+    background: var(--page_bg);
+  }
+
+  /* Hide scrollbars inside artboards */
+  .ab { font-family: var(--f_ui); color: var(--primary_text); }
+  .ab.dark { background: var(--primary_text); color: var(--surface_bg); }
+
+  /* Common helpers used across artboards */
+  .row { display:flex; }
+  .col { display:flex; flex-direction:column; }
+  .ar { font-family: var(--f_arabic); direction: rtl; unicode-bidi: isolate; }
+  .mono { font-family: var(--f_mono); font-size: 11px; letter-spacing: .02em; }
+  .label-eyebrow {
+    font-family: var(--f_mono);
+    font-size: 10px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--secondary_text);
+  }
+
+  /* Tiny utility chips for tokens */
+  .tok-chip {
+    display:inline-flex; align-items:center; gap:6px;
+    font-family: var(--f_mono); font-size: 10.5px; color: var(--secondary_text);
+    background: var(--surface_bg); border:1px solid var(--subtle_stroke);
+    padding: 3px 7px; border-radius: var(--r_pill);
+  }
+  .swatch-dot { width: 12px; height: 12px; border-radius: 50%; flex:none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); }
+
+  /* MCP chat shell helpers */
+  .mcp-bg {
+    background:
+      radial-gradient(800px 400px at 20% 0%, rgba(91,132,102,.06), transparent 60%),
+      #f6f5f0;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="parts/foundations.jsx"></script>
+<script type="text/babel" src="parts/components.jsx"></script>
+<script type="text/babel" src="parts/learning.jsx"></script>
+<script type="text/babel" src="parts/screens.jsx"></script>
+<script type="text/babel" src="parts/mcp.jsx"></script>
+<script type="text/babel" src="parts/app.jsx"></script>
+
+</body>
+</html>
