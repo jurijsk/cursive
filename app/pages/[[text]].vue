@@ -294,14 +294,6 @@ function applyVocalization() {
 	input.value = applySpellings(input.value);
 }
 
-function splitFormGlyphCharacters(formValue: string) {
-	return Array.from(formValue).map((character, index) => ({
-		key: `${index}-${character}`,
-		character,
-		isTatweel: character === 'ـ'
-	}));
-}
-
 let shapeTimer: ReturnType<typeof setTimeout> | null = null;
 watch([input, selectedFont], () => {
 	if(shapeTimer) clearTimeout(shapeTimer);
@@ -488,43 +480,19 @@ watch(input, () => { stopQuiz(); });
 						<template v-if="selectedLetter.kind === 'letter'">
 							<div class="form_cell">
 								<div class="form_label">isolated</div>
-								<div class="form_glyph ar">
-									<span
-										v-for="part in splitFormGlyphCharacters(selectedLetter.forms.isolated)"
-										:key="part.key"
-										:class="{ form_tatweel: part.isTatweel }"
-									>{{ part.character }}</span>
-								</div>
+								<div class="form_glyph ar">{{ selectedLetter.char }}</div>
 							</div>
 							<div class="form_cell">
 								<div class="form_label">initial</div>
-								<div class="form_glyph ar">
-									<span
-										v-for="part in splitFormGlyphCharacters(selectedLetter.forms.initial)"
-										:key="part.key"
-										:class="{ form_tatweel: part.isTatweel }"
-									>{{ part.character }}</span>
-								</div>
+								<div class="form_glyph ar">{{ selectedLetter.char }}<span class="form_tatweel">ـ</span></div>
 							</div>
 							<div class="form_cell">
 								<div class="form_label">medial</div>
-								<div class="form_glyph ar">
-									<span
-										v-for="part in splitFormGlyphCharacters(selectedLetter.forms.medial)"
-										:key="part.key"
-										:class="{ form_tatweel: part.isTatweel }"
-									>{{ part.character }}</span>
-								</div>
+								<div class="form_glyph ar"><span class="form_tatweel">ـ</span>{{ selectedLetter.char }}<span class="form_tatweel">ـ</span></div>
 							</div>
 							<div class="form_cell">
 								<div class="form_label">final</div>
-								<div class="form_glyph ar">
-									<span
-										v-for="part in splitFormGlyphCharacters(selectedLetter.forms.final)"
-										:key="part.key"
-										:class="{ form_tatweel: part.isTatweel }"
-									>{{ part.character }}</span>
-								</div>
+								<div class="form_glyph ar"><span class="form_tatweel">ـ</span>{{ selectedLetter.char }}</div>
 							</div>
 						</template>
 						<div v-else class="form_cell form_cell_message">
