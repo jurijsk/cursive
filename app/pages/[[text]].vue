@@ -294,6 +294,14 @@ function applyVocalization() {
 	input.value = applySpellings(input.value);
 }
 
+function splitFormGlyphCharacters(formValue: string) {
+	return Array.from(formValue).map((character, index) => ({
+		key: `${index}-${character}`,
+		character,
+		isTatweel: character === 'ـ'
+	}));
+}
+
 let shapeTimer: ReturnType<typeof setTimeout> | null = null;
 watch([input, selectedFont], () => {
 	if(shapeTimer) clearTimeout(shapeTimer);
@@ -389,14 +397,9 @@ watch(input, () => { stopQuiz(); });
 </script>
 <template>
 	<div class="shape_page" :style="{ '--current_arabic_font': fontFamily }">
-		<header class="hero">
-			<div class="label-eyebrow">Type · shape · explore</div>
-			<h1>Type Arabic, see how it shapes.</h1>
-			<p class="hero_lede">Watch each letter take its initial, medial, final, or isolated form. Click any glyph to learn its name, sound, and forms.</p>
-		</header>
+		<h3>Marhaba! Paste arabic text to the box below and explore the script letter by letter.</h3>
 
 		<div class="field">
-			<label for="shape_input" class="field_label">Text</label>
 			<input id="shape_input" v-model="input" class="text_input ar" dir="rtl" >
 		</div>
 
@@ -454,8 +457,7 @@ watch(input, () => { stopQuiz(); });
 						<span class="hero_letter ar">{{ selectedLetter.kind === 'diacritic' ? 'ـ' + selectedLetter.char : selectedLetter.char }}</span>
 						<div class="letter_info">
 							<div class="letter_name">
-								{{ selectedLetter.name }} <span class="letter_arabic_name">({{ selectedLetter.arabicName }})</span>
-								<span class="badge" :class="selectedLetter.kind === 'diacritic' ? 'badge_saffron' : 'badge_sage'">{{ selectedLetter.kind }}</span>
+								{{ selectedLetter.name }}
 							</div>
 							<div class="letter_translit"><span class="label-eyebrow">Transliteration</span> {{ selectedLetter.transliteration.join(', ') }}</div>
 						</div>
@@ -486,19 +488,43 @@ watch(input, () => { stopQuiz(); });
 						<template v-if="selectedLetter.kind === 'letter'">
 							<div class="form_cell">
 								<div class="form_label">isolated</div>
-								<div class="form_glyph ar">{{ selectedLetter.forms.isolated }}</div>
+								<div class="form_glyph ar">
+									<span
+										v-for="part in splitFormGlyphCharacters(selectedLetter.forms.isolated)"
+										:key="part.key"
+										:class="{ form_tatweel: part.isTatweel }"
+									>{{ part.character }}</span>
+								</div>
 							</div>
 							<div class="form_cell">
 								<div class="form_label">initial</div>
-								<div class="form_glyph ar">{{ selectedLetter.forms.initial }}</div>
+								<div class="form_glyph ar">
+									<span
+										v-for="part in splitFormGlyphCharacters(selectedLetter.forms.initial)"
+										:key="part.key"
+										:class="{ form_tatweel: part.isTatweel }"
+									>{{ part.character }}</span>
+								</div>
 							</div>
 							<div class="form_cell">
 								<div class="form_label">medial</div>
-								<div class="form_glyph ar">{{ selectedLetter.forms.medial }}</div>
+								<div class="form_glyph ar">
+									<span
+										v-for="part in splitFormGlyphCharacters(selectedLetter.forms.medial)"
+										:key="part.key"
+										:class="{ form_tatweel: part.isTatweel }"
+									>{{ part.character }}</span>
+								</div>
 							</div>
 							<div class="form_cell">
 								<div class="form_label">final</div>
-								<div class="form_glyph ar">{{ selectedLetter.forms.final }}</div>
+								<div class="form_glyph ar">
+									<span
+										v-for="part in splitFormGlyphCharacters(selectedLetter.forms.final)"
+										:key="part.key"
+										:class="{ form_tatweel: part.isTatweel }"
+									>{{ part.character }}</span>
+								</div>
 							</div>
 						</template>
 						<div v-else class="form_cell form_cell_message">
@@ -586,37 +612,11 @@ watch(input, () => { stopQuiz(); });
 	gap: 20px;
 }
 
-.hero {
-	margin-bottom: 4px;
-}
-
-.hero h1 {
-	font-family: var(--f_display);
-	font-weight: 400;
-	font-size: clamp(2rem, 4vw, 2.75rem);
-	letter-spacing: -0.02em;
-	margin: 6px 0 6px;
-}
-
-.hero_lede {
-	font-size: 14px;
-	color: var(--secondary_text);
-	max-width: 56ch;
-	line-height: 1.55;
-	margin: 0;
-}
-
 /* ── Field ─────────────────────────────────────────────── */
 .field {
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
-}
-
-.field_label {
-	font-size: 12px;
-	font-weight: 500;
-	color: var(--secondary_text);
 }
 
 .text_input {
@@ -932,38 +932,6 @@ svg {
 	min-width: 0;
 }
 
-.letter_arabic_name {
-	color: var(--secondary_text);
-	font-weight: 400;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	min-width: 0;
-}
-
-.badge {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	flex-shrink: 0;
-	font-family: var(--f_ui);
-	font-size: 11px;
-	font-weight: 500;
-	padding: 3px 10px;
-	border-radius: var(--r_pill);
-	text-transform: lowercase;
-	letter-spacing: 0.02em;
-}
-
-.badge_sage {
-	background: var(--badge_sage_bg);
-	color: var(--badge_sage_text);
-}
-
-.badge_saffron {
-	background: var(--badge_saffron_bg);
-	color: var(--badge_saffron_text);
-}
-
 .letter_translit {
 	font-size: 13px;
 	color: var(--secondary_text);
@@ -1011,6 +979,10 @@ svg {
 	font-size: 1.9rem;
 	line-height: 1.1;
 	color: var(--primary_text);
+}
+
+.form_tatweel {
+	color: var(--muted_text);
 }
 
 .form_message {

@@ -3,9 +3,7 @@
 		<header class="app_bar">
 			<NuxtLink to="/" class="brand" aria-label="Cursive home">
 				<img src="/favicon.png" alt="" class="brand_mark" >
-				<div class="brand_name">Cursive</div>
 			</NuxtLink>
-			<div class="brand_subtitle label-eyebrow">Arabic script, shaped</div>
 		</header>
 		<main class="page">
 			<NuxtPage />
@@ -19,28 +17,29 @@
 		display: flex;
 		flex-direction: column;
 		background: var(--page_bg);
+		position: relative;
 	}
 
 	.app_bar {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
+		justify-content: flex-start;
 		gap: 16px;
 		padding: 16px clamp(16px, 4vw, 36px);
-		border-bottom: 1px solid var(--subtle_stroke);
-		background: var(--surface_bg);
+		border-bottom: none;
+		background: transparent;
+		position: absolute;
+		inset-block-start: 0;
+		inset-inline-start: 0;
+		z-index: 2;
 	}
 
 	.brand {
 		display: flex;
 		align-items: center;
-		gap: 12px;
+		gap: 0;
 		color: inherit;
 		text-decoration: none;
-
-		&:hover .brand_name {
-			color: var(--accent_primary);
-		}
 
 		&:focus-visible {
 			outline: 2px solid var(--focus_field_border);
@@ -55,13 +54,6 @@
 		border-radius: var(--r_2);
 		display: block;
 		object-fit: contain;
-	}
-
-	.brand_name {
-		font-family: var(--f_display);
-		font-size: 20px;
-		font-weight: 500;
-		letter-spacing: -0.01em;
 	}
 
 	.page {
@@ -79,8 +71,6 @@
 			padding: 12px 16px;
 			gap: 10px;
 		}
-		.brand_subtitle { display: none; }
-		.brand_name { font-size: 18px; }
 		.brand_mark { width: 32px; height: 32px; }
 		.page { padding: 16px; }
 	}
