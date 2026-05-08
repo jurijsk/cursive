@@ -713,7 +713,7 @@ watch(input, () => { stopQuiz(); });
 
 .btn:disabled {
 	opacity: .4;
-	cursor: not-allowed;
+	cursor: default;
 }
 
 /* ── Examples / chips ──────────────────────────────────── */
@@ -851,6 +851,7 @@ svg {
 .panel_nav {
 	display: flex;
 	justify-content: flex-end;
+	margin-inline-start: auto;
 	flex-shrink: 0;
 	gap: 8px;
 }
@@ -875,7 +876,7 @@ svg {
 
 .nav_btn:disabled {
 	opacity: 0.35;
-	cursor: not-allowed;
+	cursor: default;
 }
 
 .nav_arrow {
