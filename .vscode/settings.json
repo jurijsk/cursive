@@ -1,9 +1,29 @@
 {
 	"cSpell.words": [
+		"buckwalter",
+		"ccmp",
 		"createharf",
+		"diacritic",
+		"diacritics",
+		"emphatics",
+		"glyphId",
+		"glyphName",
 		"Harf",
 		"harfbuzz",
-		"harfbuzzjs"
+		"harfbuzzjs",
+		"interdentals",
+		"labials",
+		"laryngeals",
+		"osk",
+		"pharyngeals",
+		"sibilants",
+		"Tajawal",
+		"tatweel",
+		"translit",
+		"transliteration",
+		"upem",
+		"uvulars",
+		"xAdvance"
 	],
 	"chat.tools.terminal.autoApprove": {
 		"npx playwright": true

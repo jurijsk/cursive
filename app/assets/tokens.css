@@ -148,6 +148,20 @@
   --letter_form_active_border: var(----young_olive);
   --letter_form_active_text:   var(----cypress_green);
 
+  /* Shape */
+  --r_2:                       8px;
+  --r_3:                       12px;
+  --r_4:                       16px;
+  --r_button:                  10px;
+  --r_pill:                    999px;
+
+  /* Elevation */
+  --e_1:                       0 8px 24px rgba(26, 36, 32, 0.08);
+  --e_inset:                   inset 0 1px 0 rgba(255, 255, 255, 0.65);
+
+  /* Status surfaces */
+  --error_quiet_bg:            var(----shell_pink);
+
   /* ─── 3 · Type families ──────────────────────────────────
    * @nuxt/fonts scans these var() references in CSS, finds the named
    * families in nuxt.config.ts, and emits the appropriate @font-face

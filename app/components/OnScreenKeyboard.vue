@@ -161,7 +161,7 @@ const transliterationLayouts: Record<TransliterationMode, KeyboardLayout> = {
 				{ char: 'ت', display: 't' }, { char: 'ي', display: 'y' },
 				{ char: 'ث', display: 'v' }, { char: 'ش', display: '$' },
 				{ char: 'خ', display: 'x' }, { char: 'ح', display: 'H' },
-				{ char: 'ء', display: "'" }
+				{ char: 'ء', display: '\'' }
 			],
 			[
 				{ char: 'ا', display: 'A' }, { char: 'س', display: 's' },
@@ -194,7 +194,7 @@ const transliterationLayouts: Record<TransliterationMode, KeyboardLayout> = {
 		rows: [
 			[
 				{ char: 'ق', display: 'q' }, { char: 'و', display: 'w' },
-				{ char: 'ع', display: "ʿ" }, { char: 'ر', display: 'r' },
+				{ char: 'ع', display: 'ʿ' }, { char: 'ر', display: 'r' },
 				{ char: 'ت', display: 't' }, { char: 'ي', display: 'y' },
 				{ char: 'ث', display: 'th', wide: true }, { char: 'ش', display: 'sh', wide: true },
 				{ char: 'خ', display: 'kh', wide: true }, { char: 'ح', display: 'ḥ' },
@@ -261,9 +261,7 @@ const diacriticsRow = computed(() => activeLayout.value.rows.at(-1) ?? []);
 
 const emit = defineEmits<{
 	(e: 'key', char: string): void;
-	(e: 'prev'): void;
-	(e: 'next'): void;
-	(e: 'backspace'): void;
+	(e: 'prev' | 'next' | 'backspace'): void;
 }>();
 
 function onKey(k: Key) {
@@ -324,13 +322,13 @@ function onKey(k: Key) {
 
 		<div v-if="showPicker" class="osk_row osk_layout_switchers" dir="ltr">
 			<button
-				v-for="(layout, i) in BUILTIN_LAYOUTS"
-				:key="layout.name"
+				v-for="(layout_option, i) in BUILTIN_LAYOUTS"
+				:key="layout_option.name"
 				type="button"
 				class="osk_tab"
 				:class="{ active: selectedIdx === i }"
 				@click="selectedIdx = i"
-			>{{ layout.name }}</button>
+			>{{ layout_option.name }}</button>
 
 			<template v-if="isTranslitActive">
 				<button
@@ -393,8 +391,8 @@ function onKey(k: Key) {
 
 .osk_mode_btn.active {
 	background: transparent;
-	border-color: #111;
-	color: #111;
+	border-color: var(--accent_primary_hi);
+	color: var(--accent_primary_hi);
 }
 
 .osk_tab {
@@ -417,9 +415,9 @@ function onKey(k: Key) {
 }
 
 .osk_tab.active {
-	background: var(--primary_text);
-	border-color: var(--primary_text);
-	color: var(--page_bg);
+	background: var(--inverse_surface_bg);
+	border-color: var(--inverse_surface_bg);
+	color: var(--inverse_text);
 }
 
 .osk_row {
@@ -468,23 +466,23 @@ function onKey(k: Key) {
 }
 
 .osk_key:hover {
-	background: var(----olive_leaf_green);
-	color: var(--inverse_text, #fff);
+	background: var(--success_color);
+	color: var(--on_primary_text);
 	border-color: transparent;
 }
 
 .osk_key:active { transform: translateY(1px); }
 
 .osk_key.correct {
-	background: var(----oasis_sage, #4f8a5c);
-	color: #fff;
+	background: var(--accent_primary);
+	color: var(--on_primary_text);
 	border-color: transparent;
 	animation: osk_pulse .35s ease-out;
 }
 
 .osk_key.wrong {
-	background: var(----brick_red, #b34a3c);
-	color: #fff;
+	background: var(--error_color);
+	color: var(--on_primary_text);
 	border-color: transparent;
 	animation: osk_shake .3s ease-in-out;
 }

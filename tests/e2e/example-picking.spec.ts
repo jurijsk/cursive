@@ -117,7 +117,9 @@ test.describe('example word picker', () => {
 				try {
 					const body = req.postData();
 					if (body) requests.push(JSON.parse(body));
-				} catch (e) {}
+				} catch {
+					return;
+				}
 			}
 		});
 

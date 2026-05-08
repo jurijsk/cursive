@@ -2,6 +2,7 @@
 	// https://nuxt.com/docs/guide/concepts/typescript
 	"compilerOptions": {
 		"allowSyntheticDefaultImports": true,
+		"ignoreDeprecations": "6.0",
 		"moduleResolution": "node",
 		"module": "ESNext",
 		"target": "ES2020",

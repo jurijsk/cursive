@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import { letters, type Dialect } from '~/data/letters';
+import { letters } from '~/data/letters';
 import { findVocalizableMatches, applySpellings } from '~/data/spellings';
 import { useSettingsStore, type FontKey } from '~/stores/settings';
-import { groupGlyphsIntoUnits, resolveGlyphSelection, letterPreviewInContext, findPrevBaseChar, findNextBaseChar, type ShapedGlyph as ShapedGlyphT } from '~/utils/glyphs';
+import { groupGlyphsIntoUnits, resolveGlyphSelection, letterPreviewInContext, findPrevBaseChar, findNextBaseChar } from '~/utils/glyphs';
 
 definePageMeta({ key: 'cursive-page' });
 
@@ -84,7 +84,7 @@ onMounted(() => {
 });
 onUnmounted(() => { resizeObserver?.disconnect(); });
 
-const { data, refresh, error, status } = await useAsyncData<ShapeResult>('shape-text', () =>
+const { data, refresh, error } = await useAsyncData<ShapeResult>('shape-text', () =>
 	$fetch<ShapeResult>('/api/shape', { method: 'POST', body: { text: input.value, font: selectedFont.value } }),
 { watch: [] }
 );
@@ -638,12 +638,12 @@ watch(input, () => { stopQuiz(); });
 
 .notice_saffron {
 	background: var(--badge_saffron_bg);
-	border: 1px solid #ecd9a3;
+	border: 1px solid var(--accent_honor_quiet);
 	color: var(--badge_saffron_text);
 }
 
 .notice_danger {
-	background: #f6e2df;
+	background: var(--error_quiet_bg);
 	border: 1px solid var(--danger_button_border);
 	color: var(--error_color);
 }
@@ -771,15 +771,15 @@ svg {
 
 .glyph-path.missing { fill: var(--error_color); }
 
-.glyph-cluster:hover .glyph-path { fill: var(----olive_leaf_green); }
+.glyph-cluster:hover .glyph-path { fill: var(--success_color); }
 
 .glyph-cluster.selected .glyph-path,
 .glyph-cluster.selected:hover .glyph-path {
-	fill: var(----turmeric_gold);
+	fill: var(--accent_honor);
 }
 
 .glyph-cluster.quiz_target .glyph-path {
-	fill: var(----turmeric_gold);
+	fill: var(--accent_honor);
 	animation: quiz_pulse 1.4s ease-in-out infinite;
 }
 
@@ -1063,7 +1063,7 @@ svg {
 
 .quiz_cta:hover {
 	background: var(--accent_primary);
-	color: var(--inverse_text, #fff);
+	color: var(--inverse_text);
 }
 
 .quiz_cta_label {
