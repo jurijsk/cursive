@@ -18,7 +18,7 @@ export default defineConfig({
 	reporter: 'line',
 	use: {
 		baseURL: BASE_URL,
-		trace: 'on-first-retry',
+		trace: 'on-first-retry'
 	},
 	projects: [
 		{

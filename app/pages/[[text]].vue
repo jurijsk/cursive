@@ -449,28 +449,8 @@ watch(input, () => { stopQuiz(); });
 
 		<aside v-if="glyphs.length" class="info_panel">
 			<div class="panel_body">
-				<div class="panel_nav">
-					<button
-						type="button"
-						class="nav_btn"
-						:disabled="!prevUnit"
-						@click="selectAdjacent(prevUnit)"
-					>
-						<span class="nav_arrow">←</span>
-						<span class="nav_preview">{{ prevPreview }}</span>
-					</button>
-					<button
-						type="button"
-						class="nav_btn"
-						:disabled="!nextUnit"
-						@click="selectAdjacent(nextUnit)"
-					>
-						<span class="nav_preview">{{ nextPreview }}</span>
-						<span class="nav_arrow">→</span>
-					</button>
-				</div>
-				<template v-if="selectedLetter">
-					<div class="letter_row">
+				<div class="panel_top_row">
+					<div v-if="selectedLetter" class="letter_row">
 						<span class="hero_letter ar">{{ selectedLetter.kind === 'diacritic' ? 'ـ' + selectedLetter.char : selectedLetter.char }}</span>
 						<div class="letter_info">
 							<div class="letter_name">
@@ -480,6 +460,28 @@ watch(input, () => { stopQuiz(); });
 							<div class="letter_translit"><span class="label-eyebrow">Transliteration</span> {{ selectedLetter.transliteration.join(', ') }}</div>
 						</div>
 					</div>
+					<div class="panel_nav">
+						<button
+							type="button"
+							class="nav_btn"
+							:disabled="!prevUnit"
+							@click="selectAdjacent(prevUnit)"
+						>
+							<span class="nav_arrow">←</span>
+							<span class="nav_preview">{{ prevPreview }}</span>
+						</button>
+						<button
+							type="button"
+							class="nav_btn"
+							:disabled="!nextUnit"
+							@click="selectAdjacent(nextUnit)"
+						>
+							<span class="nav_preview">{{ nextPreview }}</span>
+							<span class="nav_arrow">→</span>
+						</button>
+					</div>
+				</div>
+				<template v-if="selectedLetter">
 					<div v-if="selectedLetter.kind === 'letter' || selectedLetter.kind === 'diacritic'" class="forms_row">
 						<template v-if="selectedLetter.kind === 'letter'">
 							<div class="form_cell">
@@ -816,9 +818,40 @@ svg {
 	gap: 14px;
 }
 
+.panel_top_row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	min-width: 0;
+}
+
+@container page (max-width: 30rem) {
+	.panel_top_row {
+		flex-direction: column-reverse;
+		align-items: flex-start;
+	}
+	.panel_nav {
+		align-self: flex-end;
+	}
+}
+
+@supports not (container-type: inline-size) {
+	@media (max-width: 540px) {
+		.panel_top_row {
+			flex-direction: column-reverse;
+			align-items: flex-start;
+		}
+		.panel_nav {
+			align-self: flex-end;
+		}
+	}
+}
+
 .panel_nav {
 	display: flex;
 	justify-content: flex-end;
+	flex-shrink: 0;
 	gap: 8px;
 }
 
@@ -867,6 +900,7 @@ svg {
 	align-items: center;
 	gap: 18px;
 	min-width: 0;
+	flex: 1;
 }
 
 .letter_info {

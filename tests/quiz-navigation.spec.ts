@@ -12,7 +12,8 @@ test.describe('quiz keyboard navigation', () => {
 		// has settled. Only after this point are v-model watchers active.
 		await page.waitForFunction(
 			() => {
-				const app = (window as any).useNuxtApp?.();
+				const win = window as Window & { useNuxtApp?: () => { isHydrating?: boolean } };
+				const app = win.useNuxtApp?.();
 				return app && app.isHydrating === false;
 			},
 			{ timeout: 15000 }

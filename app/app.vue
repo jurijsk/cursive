@@ -70,6 +70,8 @@
 		max-width: 960px;
 		margin: 0 auto;
 		padding: clamp(20px, 4vw, 40px);
+		container-type: inline-size;
+		container-name: page;
 	}
 
 	@media (max-width: 560px) {

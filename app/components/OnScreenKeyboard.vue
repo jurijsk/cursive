@@ -188,6 +188,7 @@ const props = withDefaults(defineProps<{
 	feedback?: { char: string; status: 'correct' | 'wrong' } | null;
 	targetChar?: string | null;
 }>(), {
+	layout: undefined,
 	feedback: null,
 	targetChar: null
 });
