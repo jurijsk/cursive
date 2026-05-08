@@ -31,6 +31,7 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
+          production_branch: master
           action: "upload"
           # With skip_app_build: true the action ignores output_location and
           # treats app_location as the already-built artifacts directory, so

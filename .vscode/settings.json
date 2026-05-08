@@ -26,6 +26,7 @@
 		"xAdvance"
 	],
 	"chat.tools.terminal.autoApprove": {
-		"npx playwright": true
+		"npx playwright": true,
+		"gh run view": true
 	}
 }

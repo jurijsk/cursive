@@ -251,9 +251,16 @@ const scale = computed(() => {
 });
 
 const emPx = computed(() => Math.round(upem.value * scale.value));
-// Vertical box: ascender + descender headroom scales with em so descenders
-// (and any selection ring) aren't clipped at large sizes.
-const layoutHeight = computed(() => Math.round(emPx.value * 1.4 + 16));
+// Vertical box: Amiri's stacked marks can rise higher than the other fonts,
+// so keep the original baseline placement but add more total headroom.
+const VERTICAL_HEADROOM_EM = 1.65;
+const VERTICAL_PADDING_PX = 16;
+// Extra pixels reserved above the baseline for Amiri stacked/high diacritics.
+const ASCENDER_SLACK_PX = 64;
+// Keep a small right safety margin for glyph ink that extends beyond advance,
+// but avoid visually large gaps near the right canvas edge.
+const RIGHT_EDGE_SLACK_EM = 0.08;
+const layoutHeight = computed(() => Math.round(emPx.value * VERTICAL_HEADROOM_EM + VERTICAL_PADDING_PX + ASCENDER_SLACK_PX));
 const runWidthPx = computed(() => totalAdvanceUpm.value * scale.value + INK_OVERHANG_EM * emPx.value);
 const layoutWidth = computed(() => Math.max(canvasWidth.value, runWidthPx.value + CANVAS_PADDING * 2));
 
@@ -263,7 +270,7 @@ const layoutWidth = computed(() => Math.max(canvasWidth.value, runWidthPx.value 
 // half-em of ink-overhang slack on the right.
 const runOffsetX = computed(() => {
 	const runAdvancePx = totalAdvanceUpm.value * scale.value;
-	const rightSlack = (INK_OVERHANG_EM / 2) * emPx.value;
+	const rightSlack = RIGHT_EDGE_SLACK_EM * emPx.value;
 	return Math.max(CANVAS_PADDING, layoutWidth.value - CANVAS_PADDING - rightSlack - runAdvancePx);
 });
 const hasMissingGlyphs = computed(() => data.value?.hasMissingGlyphs ?? false);
@@ -421,7 +428,7 @@ watch(input, () => { stopQuiz(); });
 
 		<div ref="canvasRef" class="shape_canvas">
 		<svg :width="layoutWidth" :height="layoutHeight" :viewBox="`0 0 ${layoutWidth} ${layoutHeight}`">
-			<g :transform="`translate(${runOffsetX}, ${emPx + 10}) scale(1, -1)`">
+			<g :transform="`translate(${runOffsetX}, ${emPx + ASCENDER_SLACK_PX}) scale(1, -1)`">
 				<g v-for="(group, ui) in glyphClusters" :key="ui" :class="{ 'glyph-cluster': true, selected: ui === currentUnitIndex, quiz_target: quizTarget && group.cluster === quizTarget.cluster }" :data-cluster="group.cluster">
 					<template v-for="(g, i) in group.glyphs" :key="i">
 						<path
@@ -468,27 +475,33 @@ watch(input, () => { stopQuiz(); });
 						<div class="letter_info">
 							<div class="letter_name">
 								{{ selectedLetter.name }} <span class="letter_arabic_name">({{ selectedLetter.arabicName }})</span>
-								<span class="badge" :class="selectedLetter.kind === 'diacritic' ? 'badge_saffron' : 'badge_sage'">{{ selectedLetter.kind === 'diacritic' ? 'diacritic' : 'letter' }}</span>
+								<span class="badge" :class="selectedLetter.kind === 'diacritic' ? 'badge_saffron' : 'badge_sage'">{{ selectedLetter.kind }}</span>
 							</div>
 							<div class="letter_translit"><span class="label-eyebrow">Transliteration</span> {{ selectedLetter.transliteration.join(', ') }}</div>
 						</div>
 					</div>
-					<div v-if="selectedLetter.forms" class="forms_row">
-						<div class="form_cell">
-							<div class="form_label">isolated</div>
-							<div class="form_glyph ar">{{ selectedLetter.forms.isolated }}</div>
-						</div>
-						<div class="form_cell">
-							<div class="form_label">initial</div>
-							<div class="form_glyph ar">{{ selectedLetter.forms.initial }}</div>
-						</div>
-						<div class="form_cell">
-							<div class="form_label">medial</div>
-							<div class="form_glyph ar">{{ selectedLetter.forms.medial }}</div>
-						</div>
-						<div class="form_cell">
-							<div class="form_label">final</div>
-							<div class="form_glyph ar">{{ selectedLetter.forms.final }}</div>
+					<div v-if="selectedLetter.kind === 'letter' || selectedLetter.kind === 'diacritic'" class="forms_row">
+						<template v-if="selectedLetter.kind === 'letter'">
+							<div class="form_cell">
+								<div class="form_label">isolated</div>
+								<div class="form_glyph ar">{{ selectedLetter.forms.isolated }}</div>
+							</div>
+							<div class="form_cell">
+								<div class="form_label">initial</div>
+								<div class="form_glyph ar">{{ selectedLetter.forms.initial }}</div>
+							</div>
+							<div class="form_cell">
+								<div class="form_label">medial</div>
+								<div class="form_glyph ar">{{ selectedLetter.forms.medial }}</div>
+							</div>
+							<div class="form_cell">
+								<div class="form_label">final</div>
+								<div class="form_glyph ar">{{ selectedLetter.forms.final }}</div>
+							</div>
+						</template>
+						<div v-else class="form_cell form_cell_message">
+							<div class="form_label">forms</div>
+							<div class="form_message">Diacritics do not have letter forms.</div>
 						</div>
 					</div>
 					<div class="pron_card">
@@ -536,8 +549,8 @@ watch(input, () => { stopQuiz(); });
 						:target-char="quizTarget?.char ?? null"
 						:feedback="quizFeedback"
 						@key="onKeyboardKey"
-						@prev="quizPrev"
-						@next="quizNext"
+						@left="isRtl ? quizNext() : quizPrev()"
+						@right="isRtl ? quizPrev() : quizNext()"
 					/>
 				</div>
 			</div>
@@ -840,7 +853,9 @@ svg {
 .nav_preview {
 	font-family: var(--current_arabic_font), var(--f_arabic);
 	font-size: 1.6rem;
-	line-height: 1;
+	display: inline-block;
+	line-height: 1.3;
+	padding-block: 0.12em 0.04em;
 	direction: rtl;
 	min-width: 1.5rem;
 	text-align: center;
@@ -925,7 +940,9 @@ svg {
 .forms_row {
 	display: grid;
 	grid-template-columns: repeat(4, minmax(0, 1fr));
+	grid-auto-rows: 1fr;
 	gap: clamp(4px, 1.5vw, 10px);
+	min-height: clamp(72px, 9vw, 88px);
 }
 
 .form_cell {
@@ -935,6 +952,15 @@ svg {
 	border: 1px solid var(--subtle_stroke);
 	border-radius: var(--r_3);
 	min-width: 0;
+	height: 100%;
+}
+
+.form_cell_message {
+	grid-column: 1 / -1;
+	padding-inline: clamp(10px, 2.6vw, 16px);
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
 }
 
 .form_label {
@@ -950,6 +976,12 @@ svg {
 	font-size: 1.9rem;
 	line-height: 1.1;
 	color: var(--primary_text);
+}
+
+.form_message {
+	font-size: 13px;
+	line-height: 1.4;
+	color: var(--secondary_text);
 }
 
 .pron_card {

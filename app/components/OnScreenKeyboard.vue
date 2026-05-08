@@ -6,13 +6,14 @@
 interface Key {
 	char: string;          // character emitted on press
 	display?: string;      // optional override for rendering (e.g., diacritics on a tatweel)
+	translit?: string;     // transliteration symbol for this mode (used for data attributes)
 	wide?: boolean;        // takes 1.5× width (multi-char transliteration glyphs)
 }
 
 interface KeyboardLayout {
 	name: string;
 	// 'arabic'  → keys rendered with the Arabic font class
-	// 'latin'   → keys rendered with UI font (transliteration / phonetic)
+	// 'latin'   → keys rendered with UI font (transliteration)
 	display_script?: 'arabic' | 'latin';
 	rows: Key[][];
 }
@@ -51,103 +52,51 @@ const arabicLayout: KeyboardLayout = {
 	]
 };
 
-// Phonetic layout — letters grouped by place/manner of articulation.
-// Keys display simplified IPA; pressing a key still emits the Arabic character.
-const phoneticLayout: KeyboardLayout = {
-	name: 'Phonetic',
-	display_script: 'latin',
-	rows: [
-		// labials + interdentals
-		[
-			{ char: 'ب', display: 'b' }, { char: 'ت', display: 't' },
-			{ char: 'ث', display: 'θ' }, { char: 'د', display: 'd' },
-			{ char: 'ذ', display: 'ð' }, { char: 'ف', display: 'f' },
-			{ char: 'م', display: 'm' }, { char: 'و', display: 'w' }
-		],
-		// sibilants + liquids + nasals
-		[
-			{ char: 'س', display: 's' }, { char: 'ص', display: 'sˤ', wide: true },
-			{ char: 'ز', display: 'z' }, { char: 'ش', display: 'ʃ' },
-			{ char: 'ج', display: 'ʒ' }, { char: 'ر', display: 'r' },
-			{ char: 'ل', display: 'l' }, { char: 'ن', display: 'n' }
-		],
-		// velars + uvulars + pharyngeals + laryngeals
-		[
-			{ char: 'ك', display: 'k' }, { char: 'ق', display: 'q' },
-			{ char: 'خ', display: 'x' }, { char: 'غ', display: 'ɣ' },
-			{ char: 'ح', display: 'ħ' }, { char: 'ع', display: 'ʕ' },
-			{ char: 'ه', display: 'h' }, { char: 'ء', display: 'ʔ' },
-			{ char: 'ي', display: 'j' }
-		],
-		// emphatics + vowel-letters
-		[
-			{ char: 'ط', display: 'tˤ', wide: true }, { char: 'ض', display: 'dˤ', wide: true },
-			{ char: 'ظ', display: 'zˤ', wide: true },
-			{ char: 'ا', display: 'aː', wide: true }, { char: 'آ', display: 'ʔaː', wide: true },
-			{ char: 'ى', display: 'aː', wide: true }, { char: 'ة', display: 'a' },
-			{ char: 'ؤ', display: 'ʔ' }, { char: 'ئ', display: 'ʔ' }
-		],
-		// diacritics row (last by convention)
-		[
-			{ char: 'ـَ', display: 'a' }, { char: 'ـِ', display: 'i' },
-			{ char: 'ـُ', display: 'u' }, { char: 'ـْ', display: '∅' },
-			{ char: 'ـّ', display: '×2', wide: true },
-			{ char: 'ـً', display: 'an', wide: true }, { char: 'ـٍ', display: 'in', wide: true },
-			{ char: 'ـٌ', display: 'un', wide: true }
-		]
-	]
-};
-
 type TransliterationMode = 'chat' | 'buckwalter' | 'academic';
 
 const transliterationModeOptions: ReadonlyArray<{ id: TransliterationMode; label: string }> = [
 	{ id: 'chat', label: 'Chat' },
-	{ id: 'buckwalter', label: 'Buck' },
-	{ id: 'academic', label: 'Acad' }
+	{ id: 'buckwalter', label: 'Buckwalter' },
+	{ id: 'academic', label: 'Academic' }
 ];
 
 // Translit variants share the same Arabic output; only key labels change.
-// Rows follow English QWERTY sound-mapping: each Arabic letter sits at the key
-// whose Latin letter most closely matches its transliteration sound.
-// Row 1 = Q-W-E(ع)-R-T-Y … Row 2 = A-S-D-F-G(غ)-H-J-K-L … Row 3 = Z-B-N-M …
+// Rows follow the English keyboard shape (QWERTY / ASDF / ZXCVBNM).
+// Extra transliteration-only symbols are kept in a dedicated top row.
 const transliterationLayouts: Record<TransliterationMode, KeyboardLayout> = {
 	chat: {
 		name: 'Translit',
 		display_script: 'latin',
 		rows: [
-			// q  w  (e=ع/3)  r  t  y  — then digraphs and gutturals filling P-O-I-U area
+			// qwerty row (10)
 			[
-				{ char: 'ق', display: 'q' }, { char: 'و', display: 'w' },
-				{ char: 'ع', display: '3' }, { char: 'ر', display: 'r' },
-				{ char: 'ت', display: 't' }, { char: 'ي', display: 'y' },
-				{ char: 'ث', display: 'th', wide: true }, { char: 'ش', display: 'sh', wide: true },
-				{ char: 'خ', display: 'kh', wide: true }, { char: 'ح', display: '7' },
-				{ char: 'ء', display: '2' }
+				{ char: 'ق', display: 'q', translit: 'q' }, { char: 'و', display: 'w', translit: 'w' },
+				{ char: 'ع', display: 'e', translit: '3' }, { char: 'ر', display: 'r', translit: 'r' },
+				{ char: 'ت', display: 't', translit: 't' }, { char: 'ي', display: 'y', translit: 'y' },
+				{ char: 'ث', display: 'u', translit: 'th' }, { char: 'ش', display: 'i', translit: 'sh' },
+				{ char: 'خ', display: 'o', translit: 'kh' }, { char: 'ح', display: 'p', translit: '7' }
 			],
-			// a  s  d  f  (g=غ/gh)  h  j  k  l  — emphatics at end
+			// asdf row (9)
 			[
-				{ char: 'ا', display: 'aa', wide: true }, { char: 'س', display: 's' },
-				{ char: 'د', display: 'd' }, { char: 'ف', display: 'f' },
-				{ char: 'غ', display: 'gh', wide: true }, { char: 'ه', display: 'h' },
-				{ char: 'ج', display: 'j' }, { char: 'ك', display: 'k' },
-				{ char: 'ل', display: 'l' }, { char: 'ص', display: 'S' },
-				{ char: 'ض', display: 'D' }
+				{ char: 'ا', display: 'a', translit: 'a' }, { char: 'س', display: 's', translit: 's' },
+				{ char: 'د', display: 'd', translit: 'd' }, { char: 'ف', display: 'f', translit: 'f' },
+				{ char: 'غ', display: 'g', translit: 'gh' }, { char: 'ه', display: 'h', translit: 'h' },
+				{ char: 'ج', display: 'j', translit: 'j' }, { char: 'ك', display: 'k', translit: 'k' }, { char: 'ل', display: 'l', translit: 'l' }
 			],
-			// z  b  n  m  — emphatics, then variant forms
+			// zxcv row (7)
 			[
-				{ char: 'ز', display: 'z' }, { char: 'ب', display: 'b' },
-				{ char: 'ن', display: 'n' }, { char: 'م', display: 'm' },
-				{ char: 'ط', display: 'T' }, { char: 'ظ', display: 'Z' },
-				{ char: 'ة', display: 'a' }, { char: 'ى', display: 'aa', wide: true },
+				{ char: 'ز', display: 'z', translit: 'z' }, { char: 'خ', display: 'x', translit: 'x' },
+				{ char: 'ث', display: 'c', translit: 'th' }, { char: 'ش', display: 'v', translit: 'sh' },
+				{ char: 'ب', display: 'b', translit: 'b' }, { char: 'ن', display: 'n', translit: 'n' },
+				{ char: 'م', display: 'm', translit: 'm' }
+			],
+			// extras strip (rendered on top)
+			[
+				{ char: 'ء', display: '2' }, { char: 'آ', display: '2a', wide: true },
 				{ char: 'ئ', display: '2i', wide: true }, { char: 'ؤ', display: '2u', wide: true },
-				{ char: 'آ', display: '2aa', wide: true }
-			],
-			[
-				{ char: 'ـَ', display: 'a' }, { char: 'ـِ', display: 'i' },
-				{ char: 'ـُ', display: 'u' }, { char: 'ـْ', display: '0' },
-				{ char: 'ـّ', display: 'xx', wide: true },
-				{ char: 'ـً', display: '-an', wide: true }, { char: 'ـٍ', display: '-in', wide: true },
-				{ char: 'ـٌ', display: '-un', wide: true }
+				{ char: 'ع', display: '3' }, { char: 'خ', display: '5' },
+				{ char: 'ط', display: '6' }, { char: 'ح', display: '7' },
+				{ char: 'ص', display: '9' }, { char: 'ظ', display: '6\'', wide: true }
 			]
 		]
 	},
@@ -155,36 +104,37 @@ const transliterationLayouts: Record<TransliterationMode, KeyboardLayout> = {
 		name: 'Translit',
 		display_script: 'latin',
 		rows: [
+			// qwerty row (10)
 			[
 				{ char: 'ق', display: 'q' }, { char: 'و', display: 'w' },
-				{ char: 'ع', display: 'E' }, { char: 'ر', display: 'r' },
+				{ char: 'ع', display: 'e', translit: 'E' }, { char: 'ر', display: 'r' },
 				{ char: 'ت', display: 't' }, { char: 'ي', display: 'y' },
-				{ char: 'ث', display: 'v' }, { char: 'ش', display: '$' },
-				{ char: 'خ', display: 'x' }, { char: 'ح', display: 'H' },
-				{ char: 'ء', display: '\'' }
+				{ char: 'ـُ', display: 'u' }, { char: 'ـِ', display: 'i' },
+				{ char: 'ـْ', display: 'o' }, { char: 'ة', display: 'p' }
 			],
+			// asdf row (9)
 			[
-				{ char: 'ا', display: 'A' }, { char: 'س', display: 's' },
+				{ char: 'ا', display: 'a', translit: 'A' }, { char: 'س', display: 's' },
 				{ char: 'د', display: 'd' }, { char: 'ف', display: 'f' },
 				{ char: 'غ', display: 'g' }, { char: 'ه', display: 'h' },
-				{ char: 'ج', display: 'j' }, { char: 'ك', display: 'k' },
-				{ char: 'ل', display: 'l' }, { char: 'ص', display: 'S' },
-				{ char: 'ض', display: 'D' }
+				{ char: 'ج', display: 'j' }, { char: 'ك', display: 'k' }, { char: 'ل', display: 'l' }
 			],
+			// zxcv row (7)
 			[
-				{ char: 'ز', display: 'z' }, { char: 'ب', display: 'b' },
-				{ char: 'ن', display: 'n' }, { char: 'م', display: 'm' },
-				{ char: 'ط', display: 'T' }, { char: 'ظ', display: 'Z' },
-				{ char: 'ة', display: 'p' }, { char: 'ى', display: 'Y' },
-				{ char: 'ئ', display: '}' }, { char: 'ؤ', display: '&' },
-				{ char: 'آ', display: '|' }
+				{ char: 'ز', display: 'z' }, { char: 'خ', display: 'x' },
+				{ char: 'ى', display: 'c', translit: 'Y' }, { char: 'ث', display: 'v' },
+				{ char: 'ب', display: 'b' }, { char: 'ن', display: 'n' },
+				{ char: 'م', display: 'm' }
 			],
+			// extras strip (rendered on top)
 			[
-				{ char: 'ـَ', display: 'a' }, { char: 'ـِ', display: 'i' },
-				{ char: 'ـُ', display: 'u' }, { char: 'ـْ', display: 'o' },
-				{ char: 'ـّ', display: '~' },
-				{ char: 'ـً', display: 'F' }, { char: 'ـٍ', display: 'K' },
-				{ char: 'ـٌ', display: 'N' }
+				{ char: 'ء', display: '\'' }, { char: 'أ', display: '>' },
+				{ char: 'إ', display: '<' }, { char: 'ئ', display: '}' },
+				{ char: 'ؤ', display: '&' }, { char: 'آ', display: '|' },
+				{ char: 'ش', display: '$' }, { char: 'ذ', display: '*' },
+				{ char: 'ح', display: 'H' }, { char: 'ص', display: 'S' },
+				{ char: 'ض', display: 'D' }, { char: 'ط', display: 'T' },
+				{ char: 'ظ', display: 'Z' }
 			]
 		]
 	},
@@ -192,43 +142,44 @@ const transliterationLayouts: Record<TransliterationMode, KeyboardLayout> = {
 		name: 'Translit',
 		display_script: 'latin',
 		rows: [
+			// qwerty row (10)
 			[
-				{ char: 'ق', display: 'q' }, { char: 'و', display: 'w' },
-				{ char: 'ع', display: 'ʿ' }, { char: 'ر', display: 'r' },
-				{ char: 'ت', display: 't' }, { char: 'ي', display: 'y' },
-				{ char: 'ث', display: 'th', wide: true }, { char: 'ش', display: 'sh', wide: true },
-				{ char: 'خ', display: 'kh', wide: true }, { char: 'ح', display: 'ḥ' },
-				{ char: 'ء', display: 'ʾ' }
+				{ char: 'ق', display: 'q', translit: 'q' }, { char: 'و', display: 'w', translit: 'w' },
+				{ char: 'ع', display: 'e', translit: 'ʿ' }, { char: 'ر', display: 'r', translit: 'r' },
+				{ char: 'ت', display: 't', translit: 't' }, { char: 'ي', display: 'y', translit: 'y' },
+				{ char: 'ث', display: 'u', translit: 'ṯ' }, { char: 'ش', display: 'i', translit: 'š' },
+				{ char: 'خ', display: 'o', translit: 'ḵ' }, { char: 'ح', display: 'p', translit: 'ḥ' }
 			],
+			// asdf row (9)
 			[
-				{ char: 'ا', display: 'ā', wide: true }, { char: 'س', display: 's' },
-				{ char: 'د', display: 'd' }, { char: 'ف', display: 'f' },
-				{ char: 'غ', display: 'gh', wide: true }, { char: 'ه', display: 'h' },
-				{ char: 'ج', display: 'j' }, { char: 'ك', display: 'k' },
-				{ char: 'ل', display: 'l' }, { char: 'ص', display: 'ṣ' },
-				{ char: 'ض', display: 'ḍ' }
+				{ char: 'ا', display: 'a', translit: 'ā' }, { char: 'س', display: 's', translit: 's' },
+				{ char: 'د', display: 'd', translit: 'd' }, { char: 'ف', display: 'f', translit: 'f' },
+				{ char: 'غ', display: 'g', translit: 'ġ' }, { char: 'ه', display: 'h', translit: 'h' },
+				{ char: 'ج', display: 'j', translit: 'ǧ' }, { char: 'ك', display: 'k', translit: 'k' }, { char: 'ل', display: 'l', translit: 'l' }
 			],
+			// zxcv row (7)
 			[
-				{ char: 'ز', display: 'z' }, { char: 'ب', display: 'b' },
-				{ char: 'ن', display: 'n' }, { char: 'م', display: 'm' },
-				{ char: 'ط', display: 'ṭ' }, { char: 'ظ', display: 'ẓ' },
-				{ char: 'ة', display: 'a' }, { char: 'ى', display: 'ā', wide: true },
+				{ char: 'ز', display: 'z', translit: 'z' }, { char: 'خ', display: 'x', translit: 'ḵ' },
+				{ char: 'ث', display: 'c', translit: 'ṯ' }, { char: 'ش', display: 'v', translit: 'š' },
+				{ char: 'ب', display: 'b', translit: 'b' }, { char: 'ن', display: 'n', translit: 'n' },
+				{ char: 'م', display: 'm', translit: 'm' }
+			],
+			// extras strip (rendered on top)
+			[
+				{ char: 'ء', display: 'ʾ' }, { char: 'ع', display: 'ʿ' },
+				{ char: 'ح', display: 'ḥ' }, { char: 'ص', display: 'ṣ' },
+				{ char: 'ض', display: 'ḍ' }, { char: 'ط', display: 'ṭ' },
+				{ char: 'ظ', display: 'ẓ' }, { char: 'ا', display: 'ā' },
+				{ char: 'ي', display: 'ī' }, { char: 'و', display: 'ū' },
 				{ char: 'ئ', display: 'ʾī', wide: true }, { char: 'ؤ', display: 'ʾū', wide: true },
 				{ char: 'آ', display: 'ʾā', wide: true }
-			],
-			[
-				{ char: 'ـَ', display: 'a' }, { char: 'ـِ', display: 'i' },
-				{ char: 'ـُ', display: 'u' }, { char: 'ـْ', display: '∅' },
-				{ char: 'ـّ', display: 'dup' },
-				{ char: 'ـً', display: 'an' }, { char: 'ـٍ', display: 'in' },
-				{ char: 'ـٌ', display: 'un' }
 			]
 		]
 	}
 };
 
 // All built-in layouts in tab order. Extractable to a data file later.
-const BUILTIN_LAYOUTS = [arabicLayout, phoneticLayout, transliterationLayouts.chat] as const;
+const BUILTIN_LAYOUTS = [arabicLayout, transliterationLayouts.chat] as const;
 
 // ─── Component logic ───────────────────────────────────────────────────────────
 
@@ -254,6 +205,13 @@ const activeLayout = computed(() => {
 	return BUILTIN_LAYOUTS[selectedIdx.value] ?? arabicLayout;
 });
 const isLatinDisplay = computed(() => activeLayout.value.display_script === 'latin');
+const rowIndentStyle = (row_idx: number) => {
+	if (isLatinDisplay.value) {
+		const latin_row_indents = ['0rem', '0.9rem', '1.6rem'];
+		return { '--row_indent': latin_row_indents[row_idx] ?? '0rem' };
+	}
+	return { '--row_indent': `${row_idx * 0.6}rem` };
+};
 
 // Convention: last row of `rows` is always the diacritics strip.
 const letterRows = computed(() => activeLayout.value.rows.slice(0, -1));
@@ -261,7 +219,7 @@ const diacriticsRow = computed(() => activeLayout.value.rows.at(-1) ?? []);
 
 const emit = defineEmits<{
 	(e: 'key', char: string): void;
-	(e: 'prev' | 'next' | 'backspace'): void;
+	(e: 'left' | 'right' | 'backspace'): void;
 }>();
 
 function onKey(k: Key) {
@@ -283,6 +241,8 @@ function onKey(k: Key) {
 					correct: props.feedback && props.feedback.char === k.char && props.feedback.status === 'correct',
 					wrong: props.feedback && props.feedback.char === k.char && props.feedback.status === 'wrong'
 				}"
+				:data-arabic="k.char"
+				:data-translit="k.translit ?? k.display ?? k.char"
 				@click="onKey(k)"
 			>
 				<span :class="{ ar: !isLatinDisplay }">{{ k.display ?? k.char }}</span>
@@ -293,7 +253,7 @@ function onKey(k: Key) {
 			v-for="(row, ri) in letterRows"
 			:key="`l${ri}`"
 			class="osk_row letters"
-			:style="isLatinDisplay ? undefined : { '--row_indent': `${ri * 0.6}rem` }"
+			:style="rowIndentStyle(ri)"
 		>
 			<button
 				v-for="(k, ki) in row"
@@ -305,6 +265,8 @@ function onKey(k: Key) {
 					correct: props.feedback && props.feedback.char === k.char && props.feedback.status === 'correct',
 					wrong: props.feedback && props.feedback.char === k.char && props.feedback.status === 'wrong'
 				}"
+				:data-arabic="k.char"
+				:data-translit="k.translit ?? k.display ?? k.char"
 				@click="onKey(k)"
 			>
 				<span :class="{ ar: !isLatinDisplay }">{{ k.display ?? k.char }}</span>
@@ -312,11 +274,11 @@ function onKey(k: Key) {
 		</div>
 
 		<div class="osk_row osk_controls">
-			<button type="button" class="osk_key ctrl" @click="emit('prev')">
-				<span>◀ skip</span>
+			<button type="button" class="osk_key ctrl" aria-label="Go left" @click="emit('left')">
+				<span>◀</span>
 			</button>
-			<button type="button" class="osk_key ctrl" @click="emit('next')">
-				<span>skip ▶</span>
+			<button type="button" class="osk_key ctrl" aria-label="Go right" @click="emit('right')">
+				<span>▶</span>
 			</button>
 		</div>
 
@@ -357,7 +319,7 @@ function onKey(k: Key) {
 	--key_size: clamp(28px, 6.6vw, 44px);
 }
 
-/* Latin display (phonetic / transliteration) — slightly wider keys, smaller font */
+/* Latin display (transliteration) — slightly wider keys, smaller font */
 .osk.latin {
 	--key_size: clamp(32px, 7.5vw, 48px);
 }
@@ -440,6 +402,7 @@ function onKey(k: Key) {
 .osk_row.osk_controls {
 	margin-top: 8px;
 	gap: 12px;
+	direction: ltr;
 }
 
 .osk_key {
@@ -495,6 +458,8 @@ function onKey(k: Key) {
 	font-weight: 500;
 	color: var(--secondary_text);
 }
+
+
 
 @keyframes osk_pulse {
 	0% { transform: scale(1); }
