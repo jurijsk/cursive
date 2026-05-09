@@ -32,6 +32,7 @@
 		"git remote": true,
 		"az": true,
 		"gh": true,
-		".\\scripts\\azure\\create-swa.ps1": true
+		".\\scripts\\azure\\create-swa.ps1": true,
+		"git add": true
 	}
 }
