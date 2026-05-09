@@ -44,6 +44,36 @@ export function groupGlyphsByCluster(glyphs: ShapedGlyph[]): GlyphCluster[] {
 
 const isMarkChar = (c: string): boolean => /\p{M}/u.test(c);
 
+// Common Arabic diacritic glyph names as used by fonts that do not follow the
+// uniXXXX naming convention (e.g. Reem Kufi uses "fatha-ar" instead of
+// "uni064E"). Maps glyph name → Unicode codepoint of the diacritic it represents.
+const ARABIC_MARK_NAME_CP: Record<string, number> = {
+	'fatha-ar': 0x064E,          'fatha': 0x064E,
+	'kasra-ar': 0x0650,          'kasra': 0x0650,
+	'damma-ar': 0x064F,          'damma': 0x064F,
+	'dammatan-ar': 0x064C,       'dammatan': 0x064C,
+	'kasratan-ar': 0x064D,       'kasratan': 0x064D,
+	'fathatan-ar': 0x064B,       'fathatan': 0x064B,
+	'shadda-ar': 0x0651,         'shadda': 0x0651,
+	'sukun-ar': 0x0652,          'sukun': 0x0652,
+	'maddah-ar': 0x0653,         'maddah': 0x0653,
+	'hamzaabove-ar': 0x0654,     'hamzaabove': 0x0654,
+	'hamzabelow-ar': 0x0655,     'hamzabelow': 0x0655,
+	'superscriptalef-ar': 0x0670,'superscriptalef': 0x0670
+};
+
+/**
+ * Resolve a HarfBuzz glyph name to the Unicode codepoint it represents,
+ * supporting both the standard `uniXXXX` naming convention and the descriptive
+ * Arabic names used by fonts like Reem Kufi (e.g. `fatha-ar`).
+ */
+function glyphNameToCodepoint(glyphName: string | null): number | null {
+	if(!glyphName) return null;
+	const m = /^uni([0-9A-Fa-f]{4,6})$/.exec(glyphName);
+	if(m) return parseInt(m[1]!, 16);
+	return ARABIC_MARK_NAME_CP[glyphName] ?? null;
+}
+
 // Arabic Joining_Type lookup for the letters we care about. Most letters in
 // 0621–06FF are dual-joining (D) — they connect on both sides; a small set are
 // right-joining only (R) — they accept a connection from the previous letter
@@ -172,13 +202,8 @@ export function groupGlyphsIntoUnits(glyphs: ShapedGlyph[], input: string): Glyp
 			// names line up (mocks, unusual fonts, merged marks), we fall back to
 			// "all marks are real diacritics" or a buffer-order heuristic.
 			const markCharCodepoints = new Set(markChars.map(c => c.codePointAt(0)));
-			const extractCp = (g: ShapedGlyph): number | null => {
-				if(!g.glyphName) return null;
-				const m = /^uni([0-9A-Fa-f]{4,6})$/.exec(g.glyphName);
-				return m ? parseInt(m[1]!, 16) : null;
-			};
 			const nameMatched = markGlyphs.filter(g => {
-				const cp = extractCp(g);
+				const cp = glyphNameToCodepoint(g.glyphName);
 				return cp != null && markCharCodepoints.has(cp);
 			});
 
@@ -263,11 +288,7 @@ export function resolveGlyphSelection(
 	// "twodotshorizontalabovear", etc.). A click on a decoration should
 	// resolve to the base letter, not to the cluster's diacritics.
 	const markCharCps = new Set(markChars.map(c => c.codePointAt(0)));
-	const glyphCp = (() => {
-		if(!g.glyphName) return null;
-		const m = /^uni([0-9A-Fa-f]{4,6})$/.exec(g.glyphName);
-		return m ? parseInt(m[1]!, 16) : null;
-	})();
+	const glyphCp = glyphNameToCodepoint(g.glyphName);
 	const isRealDiacriticByName = glyphCp != null && markCharCps.has(glyphCp);
 
 	if(g.xAdvance === 0 && isRealDiacriticByName && glyphCp != null) {

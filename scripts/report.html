@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>shape-inspect: جَمِيلَةٌ</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d1117; --surface: #161b22; --border: #30363d;
+    --text: #e6edf3; --dim: #8b949e; --accent: #58a6ff;
+    --mark-bg: #1c2537; --miss-bg: #3d1a1a;
+    --mark-fg: #79c0ff; --miss-fg: #f85149;
+    --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 13px; line-height: 1.5; padding: 2rem; }
+  h1 { font-size: 1.4rem; color: var(--accent); margin-bottom: .25rem; }
+  .meta { color: var(--dim); font-size: .85rem; margin-bottom: 2rem; }
+  nav { margin-bottom: 2rem; }
+  nav a { color: var(--accent); text-decoration: none; margin-right: .5rem; }
+  nav a:hover { text-decoration: underline; }
+
+  .svg-preview { background: #fff; border: 1px solid var(--border); border-radius: 6px; overflow: auto; margin-bottom: 3rem; padding: .5rem; max-width: 100%; }
+  .svg-preview svg { display: block; max-width: 100%; height: auto; }
+
+  .font-section { margin-bottom: 3rem; scroll-margin-top: 1rem; }
+  h2 { font-size: 1rem; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: .4rem; margin-bottom: 1rem; }
+  .subtitle { color: var(--dim); font-weight: normal; font-size: .85rem; }
+
+  table { border-collapse: collapse; width: 100%; }
+  th { text-align: left; color: var(--dim); padding: .3rem .6rem; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: .25rem .6rem; border-bottom: 1px solid #21262d; white-space: nowrap; vertical-align: middle; }
+  tr:hover td { background: #1c2128; }
+  tr.mark td { background: var(--mark-bg); }
+  tr.missing td { background: var(--miss-bg); }
+
+  .num { text-align: right; color: var(--dim); }
+  .mono { font-family: var(--font-mono); }
+  .dim { color: var(--dim); font-style: italic; }
+  .chars { min-width: 12rem; }
+  .ar { font-family: 'Noto Naskh Arabic', 'Amiri', serif; font-size: 1.2em; margin-right: .4rem; direction: rtl; display: inline-block; }
+  .ucode { color: var(--dim); font-size: .85em; }
+  .tag { width: 5rem; }
+  .badge { display: inline-block; border-radius: 4px; padding: .05rem .4rem; font-size: .75em; }
+  .mark-badge { background: #1a3050; color: var(--mark-fg); }
+  .miss-badge { background: #5a1a1a; color: var(--miss-fg); }
+</style>
+</head>
+<body>
+<h1>shape-inspect: <span dir="rtl">جَمِيلَةٌ</span></h1>
+<p class="meta">features: <code>-liga,-rlig,-dlig</code> · em: 96px · generated: 2026-05-09T00:35:49.776Z</p>
+<nav><a href="#reem-kufi">reem-kufi</a> · <a href="#tajawal">tajawal</a></nav>
+
+<div class="svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="445.6" style="background:#fff">
+  <g data-font="reem-kufi">
+    <text x="20" y="10.399999999999977" font-family="monospace" font-size="12" fill="#888">reem-kufi</text>
+    <line x1="20" y1="135.2" x2="380" y2="135.2" stroke="#e0e0e0" stroke-width="1"/>
+    <g transform="translate(70.30,61.38) scale(0.096000,-0.096000)"><title>dammatan-ar cl=7 [ةٌ]</title><path d="M23,63L0,195L33,201L57,70L23,63ZM205,156Q175,139 140.5,148.5Q106,158 88,189Q70,221 78.5,256Q87,291 117,308Q149,327 184.5,317.5Q220,308 239,276Q256,245 246.5,209.5Q237,174 205,156ZM57,70L40,100L190,186L205,156L57,70ZM190,186Q210,197 215,218.5Q220,240 209,259Q198,279 177.5,284.5Q157,290 136,279Q117,269 112.5,247.5Q108,226 118,206Q129,187 150,181Q171,175 190,186Z" fill="#222"/></g>
+    <g transform="translate(78.18,92.00) scale(0.096000,-0.096000)"><title>twodotsverticalabove-ar cl=7 [ةٌ]</title><path d="M58,112Q34,112 17,129Q0,146 0,170Q0,194 17,211Q34,228 58,228Q82,228 99,211Q116,194 116,170Q116,146 99,129Q82,112 58,112ZM58,-58Q34,-58 17,-41Q0,-24 0,0Q0,24 17,41Q34,58 58,58Q82,58 99,41Q116,24 116,0Q116,-24 99,-41Q82,-58 58,-58Z" fill="#222"/></g>
+    <g transform="translate(73.76,135.20) scale(0.096000,-0.096000)"><title>heh-ar.fina cl=7 [ةٌ]</title><path d="M173,0L238,100L435,100L435,0L173,0ZM280,0L280,200L324,200L324,0L280,0ZM224,320L224,447L324,495L324,374Q315,357 298.5,345.5Q282,334 262.5,327.5Q243,321 224,320ZM224,467L224,778L324,800L324,515L224,467ZM324,150L175,300Q188,300 209,300Q230,300 252.5,303.5Q275,307 294.5,317Q314,327 324,346L324,150ZM175,0Q134,0 100,20Q66,40 45.5,74.5Q25,109 25,150Q25,192 45.5,226Q66,260 100,280Q134,300 175,300Q216,300 250,280Q284,260 304,226Q324,192 324,150Q324,109 304,74.5Q284,40 250,20Q216,0 175,0ZM175,100Q196,100 210.5,114.5Q225,129 225,150Q225,171 210.5,185.5Q196,200 175,200Q154,200 139.5,185.5Q125,171 125,150Q125,129 139.5,114.5Q154,100 175,100Z" fill="#222"/></g>
+    <g transform="translate(116.38,55.52) scale(0.096000,-0.096000)"><title>fatha-ar cl=5 [لَ]</title><path d="M17,64L0,94L225,224L242,194L17,64Z" fill="#222"/></g>
+    <g transform="translate(113.60,135.20) scale(0.096000,-0.096000)"><title>lam-ar.medi cl=5 [لَ]</title><path d="M100,0L100,100L320,100L320,0L100,0ZM-20,0L-20,100L100,100L100,778L200,800L200,23Q200,11 190,6Q180,1 170,0.5Q160,0 160,0L-20,0Z" fill="#222"/></g>
+    <g transform="translate(136.45,149.60) scale(0.096000,-0.096000)"><title>twodotshorizontalbelow-ar cl=4 [ي]</title><path d="M231,-58Q207,-58 190,-41Q173,-24 173,0Q173,24 190,41Q207,58 231,58Q255,58 272,41Q289,24 289,0Q289,-24 272,-41Q255,-58 231,-58ZM58,-58Q34,-58 17,-41Q0,-24 0,0Q0,24 17,41Q34,58 58,58Q82,58 99,41Q116,24 116,0Q116,-24 99,-41Q82,-58 58,-58Z" fill="#222"/></g>
+    <g transform="translate(142.40,135.20) scale(0.096000,-0.096000)"><title>behDotless-ar.medi cl=4 [ي]</title><path d="M100,0L100,100L320,100L320,0L100,0ZM-20,0L-20,100L100,100L100,278L200,300L200,23Q200,11 190,6Q180,1 170,0.5Q160,0 160,0L-20,0Z" fill="#222"/></g>
+    <g transform="translate(183.20,168.80) scale(0.096000,-0.096000)"><title>kasra-ar cl=2 [مِ]</title><path d="M17,40L0,70L225,200L242,170L17,40Z" fill="#222"/></g>
+    <g transform="translate(171.20,135.20) scale(0.096000,-0.096000)"><title>meem-ar.medi cl=2 [مِ]</title><path d="M-20,0L-20,100L180,100L245,0L-20,0ZM245,0L310,100L510,100L510,0L245,0ZM245,0Q204,0 170,20Q136,40 116,74.5Q96,109 96,150Q96,201 126,240.5Q156,280 202,294Q213,297 225.5,308.5Q238,320 245,350Q253,320 266.5,308.5Q280,297 290,293Q335,279 364,239.5Q393,200 393,150Q393,109 373,74.5Q353,40 319.5,20Q286,0 245,0ZM245,100Q266,100 280.5,114.5Q295,129 295,150Q295,171 280.5,185.5Q266,200 245,200Q224,200 209.5,185.5Q195,171 195,150Q195,129 209.5,114.5Q224,100 245,100Z" fill="#222"/></g>
+    <g transform="translate(222.94,92.00) scale(0.096000,-0.096000)"><title>fatha-ar cl=0 [جَ]</title><path d="M17,64L0,94L225,224L242,194L17,64Z" fill="#222"/></g>
+    <g transform="translate(235.71,149.60) scale(0.096000,-0.096000)"><title>dotcenter-ar cl=0 [جَ]</title><path d="M58,-58Q34,-58 17,-41Q0,-24 0,0Q0,24 17,41Q34,58 58,58Q82,58 99,41Q116,24 116,0Q116,-24 99,-41Q82,-58 58,-58Z" fill="#222"/></g>
+    <g transform="translate(218.24,135.20) scale(0.096000,-0.096000)"><title>hah-ar.init cl=0 [جَ]</title><path d="M-20,0L-20,100L173,100Q152,112 129.5,138Q107,164 95,183L151,290Q186,235 229.5,192Q273,149 320.5,124.5Q368,100 416,100L660,100L600,0L-20,0Z" fill="#222"/></g>
+  </g>
+  <g data-font="tajawal">
+    <text x="20" y="223.2" font-family="monospace" font-size="12" fill="#888">tajawal</text>
+    <line x1="20" y1="348" x2="380" y2="348" stroke="#e0e0e0" stroke-width="1"/>
+    <g transform="translate(68.77,331.97) scale(0.096000,-0.096000)"><title>uni064C cl=7 [ةٌ]</title><path d="M145,613Q115,631 115,669Q115,697 132.5,716.5Q150,736 176,736Q203,736 220.5,717Q238,698 238,669Q238,626 210.5,598.5Q183,571 140,571Q89,571 60,611L38,575L2,596L42,661L62,661Q88,612 133,612Q139,612 145,613ZM181,629Q200,647 200,669Q200,701 176,701Q152,701 152,669Q152,641 181,629Z" fill="#222"/></g>
+    <g transform="translate(54.94,348.00) scale(0.096000,-0.096000)"><title>uniFE94 cl=7 [ةٌ]</title><path d="M186,565Q145,565 145,607Q145,647 186,647Q225,647 225,607Q225,565 186,565ZM300,565Q259,565 259,607Q259,647 300,647Q339,647 339,607Q339,565 300,565ZM494,62L528,62L528,0L485,0Q378,0 336,84Q284,30 208,30Q122,30 72,95Q30,150 30,232Q30,328 86,386Q135,437 207,437Q272,437 316,399L316,453L383,488L383,176Q383,62 494,62ZM316,323Q272,376 209,376Q159,376 127.5,335.5Q96,295 96,231Q96,166 127.5,127Q159,88 210,88Q275,88 318,145Q316,163 316,174L316,323Z" fill="#222"/></g>
+    <g transform="translate(111.30,333.31) scale(0.096000,-0.096000)"><title>uni064E cl=5 [لَ]</title><path d="M0,565L23,613L211,648L189,600L0,565Z" fill="#222"/></g>
+    <g transform="translate(104.67,348.00) scale(0.096000,-0.096000)"><title>uniFEE0 cl=5 [لَ]</title><path d="M309,62L344,62L344,0L301,0Q209,0 164,63Q117,0 25,0L-10,0L-10,62L18,62Q132,62 132,180L132,610L199,645L199,176Q199,62 309,62Z" fill="#222"/></g>
+    <g transform="translate(136.74,348.00) scale(0.096000,-0.096000)"><title>uniFEF4 cl=4 [ي]</title><path d="M312,62L347,62L347,0L304,0Q214,0 169,61Q122,0 33,0L-10,0L-10,62L25,62Q135,62 135,176L135,393L202,428L202,176Q202,62 312,62ZM85,-105Q125,-105 125,-146Q125,-187 85,-187Q45,-187 45,-146Q45,-105 85,-105ZM199,-105Q239,-105 239,-146Q239,-187 199,-187Q159,-187 159,-146Q159,-105 199,-105Z" fill="#222"/></g>
+    <g transform="translate(191.94,348.96) scale(0.096000,-0.096000)"><title>uni0650 cl=2 [مِ]</title><path d="M0,-183L23,-135L211,-100L189,-148L0,-183Z" fill="#222"/></g>
+    <g transform="translate(169.09,348.00) scale(0.096000,-0.096000)"><title>uniFEE4 cl=2 [مِ]</title><path d="M619,62L653,62L653,0L610,0Q519,0 474,63Q424,-20 322,-20Q219,-20 170,62Q124,0 33,0L-10,0L-10,62L25,62Q135,62 135,176L135,210Q135,325 191,386Q240,440 322,440Q416,440 465,370Q508,310 508,210L508,176Q508,62 619,62ZM322,42Q377,42 409,87.5Q441,133 441,211Q441,379 322,379Q202,379 202,211Q202,42 322,42Z" fill="#222"/></g>
+    <g transform="translate(247.04,346.46) scale(0.096000,-0.096000)"><title>uni064E cl=0 [جَ]</title><path d="M0,565L23,613L211,648L189,600L0,565Z" fill="#222"/></g>
+    <g transform="translate(230.82,348.00) scale(0.096000,-0.096000)"><title>uniFE9F cl=0 [جَ]</title><path d="M-10,0L-10,62L102,62Q320,62 442,210Q353,380 227,380Q141,380 59,293L59,359Q141,440 230,440L232,440Q389,440 504,228L504,187Q358,0 101,0L-10,0ZM254,-187Q213,-187 213,-145Q213,-105 254,-105Q293,-105 293,-145Q293,-187 254,-187Z" fill="#222"/></g>
+  </g>
+</svg>
+</div>
+
+<section class="font-section" id="reem-kufi">
+  <h2>reem-kufi <span class="subtitle">ReemKufi-Regular.ttf · upem=1000 · scale=0.0960</span></h2>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>glyph</th><th>cluster</th><th>chars</th>
+        <th>name</th><th>ax</th><th>dx</th><th>dy</th><th>x(px)</th><th></th>
+      </tr>
+    </thead>
+    <tbody><tr class="mark">
+      <td class="num">0</td>
+      <td class="num">667</td>
+      <td class="num">7</td>
+      <td class="chars"><span class="ar">ةٌ</span> <span class="ucode" title="ة">U+0629</span> <span class="ucode" title="ٌ">U+064C</span></td>
+      <td class="mono">dammatan-ar</td>
+      <td class="num">0</td>
+      <td class="num">-36</td>
+      <td class="num">769</td>
+      <td class="num">-3.5</td>
+      <td class="tag"><span class="badge mark-badge">mark</span></td>
+    </tr>
+<tr class="mark">
+      <td class="num">1</td>
+      <td class="num">652</td>
+      <td class="num">7</td>
+      <td class="chars"><span class="ar">ةٌ</span> <span class="ucode" title="ة">U+0629</span> <span class="ucode" title="ٌ">U+064C</span></td>
+      <td class="mono">twodotsverticalabove-ar</td>
+      <td class="num">0</td>
+      <td class="num">46</td>
+      <td class="num">450</td>
+      <td class="num">4.4</td>
+      <td class="tag"><span class="badge mark-badge">mark</span></td>
+    </tr>
+<tr>
+      <td class="num">2</td>
+      <td class="num">487</td>
+      <td class="num">7</td>
+      <td class="chars"><span class="ar">ةٌ</span> <span class="ucode" title="ة">U+0629</span> <span class="ucode" title="ٌ">U+064C</span></td>
+      <td class="mono">heh-ar.fina</td>
+      <td class="num">415</td>
+      <td class="num">0</td>
+      <td class="num">0</td>
+      <td class="num">0.0</td>
+      <td class="tag"></td>
+    </tr>
+<tr class="mark">
+      <td class="num">3</td>
+      <td class="num">669</td>
+      <td class="num">5</td>
+      <td class="chars"><span class="ar">لَ</span> <span class="ucode" title="ل">U+0644</span> <span class="ucode" title="َ">U+064E</span></td>
+      <td class="mono">fatha-ar</td>
+      <td class="num">0</td>
+      <td class="num">29</td>
+      <td class="num">830</td>
+      <td class="num">42.6</td>
+      <td class="tag"><span class="badge mark-badge">mark</span></td>
+    </tr>
+<tr>
+      <td class="num">4</td>
+      <td class="num">467</td>
+      <td class="num">5</td>
+      <td class="chars"><span class="ar">لَ</span> <span class="ucode" title="ل">U+0644</span> <span class="ucode" title="َ">U+064E</span></td>
+      <td class="mono">lam-ar.medi</td>
+      <td class="num">300</td>
+      <td class="num">0</td>
+      <td class="num">0</td>
+      <td class="num">39.8</td>
+      <td class="tag"></td>
+    </tr>
+<tr class="mark">
+      <td class="num">5</td>
+      <td class="num">656</td>
+      <td class="num">4</td>
+      <td class="chars"><span class="ar">ي</span> <span class="ucode" title="ي">U+064A</span></td>
+      <td class="mono">twodotshorizontalbelow-ar</td>
+      <td class="num">0</td>
+      <td class="num">-62</td>
+      <td class="num">-150</td>
+      <td class="num">62.7</td>
+      <td class="tag"><span class="badge mark-badge">mark</span></td>
+    </tr>
+<tr>
+      <td class="num">6</td>
+      <td class="num">406</td>
+      <td class="num">4</td>
+      <td class="chars"><span class="ar">ي</span> <span class="ucode" title="ي">U+064A</span></td>
+      <td class="mono">behDotless-ar.medi</td>
+      <td class="num">300</td>
+      <td class="num">0</td>
+      <td class="num">0</td>
+      <td class="num">68.6</td>
+      <td class="tag"></td>
+    </tr>
+<tr class="mark">
+      <td class="num">7</td>
+      <td class="num">671</td>
+      <td class="num">2</td>
+      <td class="chars"><span class="ar">مِ</span> <span class="ucode" title="م">U+0645</span> <span class="ucode" title="ِ">U+0650</span></td>
+      <td class="mono">kasra-ar</td>
+      <td class="num">0</td>
+      <td class="num">125</td>
+      <td class="num">-350</td>
+      <td class="num">109.4</td>
+      <td class="tag"><span class="badge mark-badge">mark</span></td>
+    </tr>
+<tr>
+      <td class="num">8</td>
+      <td class="num">479</td>
+      <td class="num">2</td>
+      <td class="chars"><span class="ar">مِ</span> <span class="ucode" title="م">U+0645</span> <span class="ucode" title="ِ">U+0650</span></td>
+      <td class="mono">meem-ar.medi</td>
+      <td class="num">490</td>
+      <td class="num">0</td>
+      <td class="num">0</td>
+      <td class="num">97.4</td>
+      <td class="tag"></td>
+    </tr>
+<tr class="mark">
+      <td class="num">9</td>
+      <td class="num">669</td>
+      <td class="num">0</td>
+      <td class="chars"><span class="ar">جَ</span> <span class="ucode" title="ج">U+062C</span> <span class="ucode" title="َ">U+064E</span></td>
+      <td class="mono">fatha-ar</td>
+      <td class="num">0</td>
+      <td class="num">49</td>
+      <td class="num">450</td>
+      <td class="num">149.2</td>
+      <td class="tag"><span class="badge mark-badge">mark</span></td>
+    </tr>
+<tr class="mark">
+      <td class="num">10</td>
+      <td class="num">651</td>
+      <td class="num">0</td>
+      <td class="chars"><span class="ar">جَ</span> <span class="ucode" title="ج">U+062C</span> <span class="ucode" title="َ">U+064E</span></td>
+      <td class="mono">dotcenter-ar</td>
+      <td class="num">0</td>
+      <td class="num">182</td>
+      <td class="num">-150</td>
+      <td class="num">162.0</td>
+      <td class="tag"><span class="badge mark-badge">mark</span></td>
+    </tr>
+<tr>
+      <td class="num">11</td>
+      <td class="num">424</td>
+      <td class="num">0</td>
+      <td class="chars"><span class="ar">جَ</span> <span class="ucode" title="ج">U+062C</span> <span class="ucode" title="َ">U+064E</span></td>
+      <td class="mono">hah-ar.init</td>
+      <td class="num">685</td>
+      <td class="num">0</td>
+      <td class="num">0</td>
+      <td class="num">144.5</td>
+      <td class="tag"></td>
+    </tr></tbody>
+  </table>
+</section>
+<section class="font-section" id="tajawal">
+  <h2>tajawal <span class="subtitle">Tajawal-Regular.ttf · upem=1000 · scale=0.0960</span></h2>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>glyph</th><th>cluster</th><th>chars</th>
+        <th>name</th><th>ax</th><th>dx</th><th>dy</th><th>x(px)</th><th></th>
+      </tr>
+    </thead>
+    <tbody><tr class="mark">
+      <td class="num">0</td>
+      <td class="num">283</td>
+      <td class="num">7</td>
+      <td class="chars"><span class="ar">ةٌ</span> <span class="ucode" title="ة">U+0629</span> <span class="ucode" title="ٌ">U+064C</span></td>
+      <td class="mono">uni064C</td>
+      <td class="num">0</td>
+      <td class="num">144</td>
+      <td class="num">167</td>
+      <td class="num">13.8</td>
+      <td class="tag"><span class="badge mark-badge">mark</span></td>
+    </tr>
+<tr>
+      <td class="num">1</td>
+      <td class="num">370</td>
+      <td class="num">7</td>
+      <td class="chars"><span class="ar">ةٌ</span> <span class="ucode" title="ة">U+0629</span> <span class="ucode" title="ٌ">U+064C</span></td>
+      <td class="mono">uniFE94</td>
+      <td class="num">518</td>
+      <td class="num">0</td>
+      <td class="num">0</td>
+      <td class="num">0.0</td>
+      <td class="tag"></td>
+    </tr>
+<tr class="mark">
+      <td class="num">2</td>
+      <td class="num">285</td>
+      <td class="num">5</td>
+      <td class="chars"><span class="ar">لَ</span> <span class="ucode" title="ل">U+0644</span> <span class="ucode" title="َ">U+064E</span></td>
+      <td class="mono">uni064E</td>
+      <td class="num">0</td>
+      <td class="num">69</td>
+      <td class="num">153</td>
+      <td class="num">56.4</td>
+      <td class="tag"><span class="badge mark-badge">mark</span></td>
+    </tr>
+<tr>
+      <td class="num">3</td>
+      <td class="num">425</td>
+      <td class="num">5</td>
+      <td class="chars"><span class="ar">لَ</span> <span class="ucode" title="ل">U+0644</span> <span class="ucode" title="َ">U+064E</span></td>
+      <td class="mono">uniFEE0</td>
+      <td class="num">334</td>
+      <td class="num">0</td>
+      <td class="num">0</td>
+      <td class="num">49.7</td>
+      <td class="tag"></td>
+    </tr>
+<tr>
+      <td class="num">4</td>
+      <td class="num">439</td>
+      <td class="num">4</td>
+      <td class="chars"><span class="ar">ي</span> <span class="ucode" title="ي">U+064A</span></td>
+      <td class="mono">uniFEF4</td>
+      <td class="num">337</td>
+      <td class="num">0</td>
+      <td class="num">0</td>
+      <td class="num">81.8</td>
+      <td class="tag"></td>
+    </tr>
+<tr class="mark">
+      <td class="num">5</td>
+      <td class="num">287</td>
+      <td class="num">2</td>
+      <td class="chars"><span class="ar">مِ</span> <span class="ucode" title="م">U+0645</span> <span class="ucode" title="ِ">U+0650</span></td>
+      <td class="mono">uni0650</td>
+      <td class="num">0</td>
+      <td class="num">238</td>
+      <td class="num">-10</td>
+      <td class="num">137.0</td>
+      <td class="tag"><span class="badge mark-badge">mark</span></td>
+    </tr>
+<tr>
+      <td class="num">6</td>
+      <td class="num">428</td>
+      <td class="num">2</td>
+      <td class="chars"><span class="ar">مِ</span> <span class="ucode" title="م">U+0645</span> <span class="ucode" title="ِ">U+0650</span></td>
+      <td class="mono">uniFEE4</td>
+      <td class="num">643</td>
+      <td class="num">0</td>
+      <td class="num">0</td>
+      <td class="num">114.1</td>
+      <td class="tag"></td>
+    </tr>
+<tr class="mark">
+      <td class="num">7</td>
+      <td class="num">285</td>
+      <td class="num">0</td>
+      <td class="chars"><span class="ar">جَ</span> <span class="ucode" title="ج">U+062C</span> <span class="ucode" title="َ">U+064E</span></td>
+      <td class="mono">uni064E</td>
+      <td class="num">0</td>
+      <td class="num">169</td>
+      <td class="num">16</td>
+      <td class="num">192.1</td>
+      <td class="tag"><span class="badge mark-badge">mark</span></td>
+    </tr>
+<tr>
+      <td class="num">8</td>
+      <td class="num">378</td>
+      <td class="num">0</td>
+      <td class="chars"><span class="ar">جَ</span> <span class="ucode" title="ج">U+062C</span> <span class="ucode" title="َ">U+064E</span></td>
+      <td class="mono">uniFE9F</td>
+      <td class="num">554</td>
+      <td class="num">0</td>
+      <td class="num">0</td>
+      <td class="num">175.9</td>
+      <td class="tag"></td>
+    </tr></tbody>
+  </table>
+</section>
+</body>
+</html>
