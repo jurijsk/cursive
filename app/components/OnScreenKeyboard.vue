@@ -73,12 +73,12 @@ const transliterationLayouts: Record<TransliterationMode, KeyboardLayout> = {
 				{ char: 'ق', display: 'q', translit: 'q' }, { char: 'و', display: 'w', translit: 'w' },
 				{ char: 'ع', display: 'e', translit: '3' }, { char: 'ر', display: 'r', translit: 'r' },
 				{ char: 'ت', display: 't', translit: 't' }, { char: 'ي', display: 'y', translit: 'y' },
-				{ char: 'ث', display: 'u', translit: 'th' }, { char: 'ش', display: 'i', translit: 'sh' },
+				{ char: 'ث', display: 'u', translit: 'th' }, { char: 'ـِ', display: 'i', translit: 'i' },
 				{ char: 'خ', display: 'o', translit: 'kh' }, { char: 'ح', display: 'p', translit: '7' }
 			],
 			// asdf row (9)
 			[
-				{ char: 'ا', display: 'a', translit: 'a' }, { char: 'س', display: 's', translit: 's' },
+				{ char: 'ـَ', display: 'a', translit: 'a' }, { char: 'س', display: 's', translit: 's' },
 				{ char: 'د', display: 'd', translit: 'd' }, { char: 'ف', display: 'f', translit: 'f' },
 				{ char: 'غ', display: 'g', translit: 'gh' }, { char: 'ه', display: 'h', translit: 'h' },
 				{ char: 'ج', display: 'j', translit: 'j' }, { char: 'ك', display: 'k', translit: 'k' }, { char: 'ل', display: 'l', translit: 'l' }
@@ -92,6 +92,7 @@ const transliterationLayouts: Record<TransliterationMode, KeyboardLayout> = {
 			],
 			// extras strip (rendered on top)
 			[
+				{ char: 'ا', display: 'A', translit: 'A' },
 				{ char: 'ء', display: '2' }, { char: 'آ', display: '2a', wide: true },
 				{ char: 'ئ', display: '2i', wide: true }, { char: 'ؤ', display: '2u', wide: true },
 				{ char: 'ع', display: '3' }, { char: 'خ', display: '5' },
@@ -107,14 +108,14 @@ const transliterationLayouts: Record<TransliterationMode, KeyboardLayout> = {
 			// qwerty row (10)
 			[
 				{ char: 'ق', display: 'q' }, { char: 'و', display: 'w' },
-				{ char: 'ع', display: 'e', translit: 'E' }, { char: 'ر', display: 'r' },
+				{ char: 'ع', display: 'E', translit: 'E' }, { char: 'ر', display: 'r' },
 				{ char: 'ت', display: 't' }, { char: 'ي', display: 'y' },
 				{ char: 'ـُ', display: 'u' }, { char: 'ـِ', display: 'i' },
 				{ char: 'ـْ', display: 'o' }, { char: 'ة', display: 'p' }
 			],
 			// asdf row (9)
 			[
-				{ char: 'ا', display: 'a', translit: 'A' }, { char: 'س', display: 's' },
+				{ char: 'ا', display: 'A', translit: 'A' }, { char: 'س', display: 's' },
 				{ char: 'د', display: 'd' }, { char: 'ف', display: 'f' },
 				{ char: 'غ', display: 'g' }, { char: 'ه', display: 'h' },
 				{ char: 'ج', display: 'j' }, { char: 'ك', display: 'k' }, { char: 'ل', display: 'l' }
@@ -122,12 +123,14 @@ const transliterationLayouts: Record<TransliterationMode, KeyboardLayout> = {
 			// zxcv row (7)
 			[
 				{ char: 'ز', display: 'z' }, { char: 'خ', display: 'x' },
-				{ char: 'ى', display: 'c', translit: 'Y' }, { char: 'ث', display: 'v' },
+				{ char: 'ى', display: 'Y', translit: 'Y' }, { char: 'ث', display: 'v' },
 				{ char: 'ب', display: 'b' }, { char: 'ن', display: 'n' },
 				{ char: 'م', display: 'm' }
 			],
 			// extras strip (rendered on top)
 			[
+				{ char: 'ـَ', display: 'a' }, { char: 'ـً', display: 'F' },
+				{ char: 'ـٌ', display: 'N' }, { char: 'ـٍ', display: 'K' }, { char: 'ـّ', display: '~' },
 				{ char: 'ء', display: '\'' }, { char: 'أ', display: '>' },
 				{ char: 'إ', display: '<' }, { char: 'ئ', display: '}' },
 				{ char: 'ؤ', display: '&' }, { char: 'آ', display: '|' },
@@ -185,7 +188,7 @@ const BUILTIN_LAYOUTS = [arabicLayout, transliterationLayouts.chat] as const;
 
 const props = withDefaults(defineProps<{
 	layout?: KeyboardLayout;
-	feedback?: { char: string; status: 'correct' | 'wrong' } | null;
+	feedback?: { char: string; key_id: string; status: 'correct' | 'wrong' } | null;
 	targetChar?: string | null;
 }>(), {
 	layout: undefined,
@@ -219,12 +222,12 @@ const letterRows = computed(() => activeLayout.value.rows.slice(0, -1));
 const diacriticsRow = computed(() => activeLayout.value.rows.at(-1) ?? []);
 
 const emit = defineEmits<{
-	(e: 'key', char: string): void;
+	(e: 'key', payload: { char: string; key_id: string }): void;
 	(e: 'left' | 'right' | 'backspace'): void;
 }>();
 
-function onKey(k: Key) {
-	emit('key', k.char);
+function onKey(keyDef: Key, key_id: string) {
+	emit('key', { char: keyDef.char, key_id });
 }
 </script>
 
@@ -239,12 +242,12 @@ function onKey(k: Key) {
 				class="osk_key"
 				:class="{
 					wide: k.wide,
-					correct: props.feedback && props.feedback.char === k.char && props.feedback.status === 'correct',
-					wrong: props.feedback && props.feedback.char === k.char && props.feedback.status === 'wrong'
+					correct: props.feedback && props.feedback.key_id === `d-${ki}` && props.feedback.status === 'correct',
+					wrong: props.feedback && props.feedback.key_id === `d-${ki}` && props.feedback.status === 'wrong'
 				}"
 				:data-arabic="k.char"
 				:data-translit="k.translit ?? k.display ?? k.char"
-				@click="onKey(k)"
+				@click="onKey(k, `d-${ki}`)"
 			>
 				<span :class="{ ar: !isLatinDisplay }">{{ k.display ?? k.char }}</span>
 			</button>
@@ -263,12 +266,12 @@ function onKey(k: Key) {
 				class="osk_key"
 				:class="{
 					wide: k.wide,
-					correct: props.feedback && props.feedback.char === k.char && props.feedback.status === 'correct',
-					wrong: props.feedback && props.feedback.char === k.char && props.feedback.status === 'wrong'
+					correct: props.feedback && props.feedback.key_id === `l-${ri}-${ki}` && props.feedback.status === 'correct',
+					wrong: props.feedback && props.feedback.key_id === `l-${ri}-${ki}` && props.feedback.status === 'wrong'
 				}"
 				:data-arabic="k.char"
 				:data-translit="k.translit ?? k.display ?? k.char"
-				@click="onKey(k)"
+				@click="onKey(k, `l-${ri}-${ki}`)"
 			>
 				<span :class="{ ar: !isLatinDisplay }">{{ k.display ?? k.char }}</span>
 			</button>

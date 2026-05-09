@@ -358,25 +358,25 @@ onUnmounted(() => {
 // input in reading order; user types each one on the on-screen keyboard.
 const quizActive = ref(false);
 const quizIndex = ref(0);
-const quizFeedback = ref<{ char: string; status: 'correct' | 'wrong' } | null>(null);
+const quizFeedback = ref<{ char: string; key_id: string; status: 'correct' | 'wrong' } | null>(null);
 let feedbackTimer: ReturnType<typeof setTimeout> | null = null;
 
-// Cluster groups in reading order whose first glyph is a base letter (not a
-// combining mark). Diacritics are skipped — they're harder to identify in
-// isolation and the keyboard places them on a separate row.
+// Cluster groups in reading order with all characters (letters and diacritics).
+// Each glyph in each cluster becomes a separate quiz item.
 const quizQueue = computed(() => {
 	return glyphClusters.value
-		.map(unit => {
-			const baseGlyph = unit.glyphs.find(g => g.xAdvance > 0) ?? unit.glyphs[0];
-			if(!baseGlyph) return null;
-			const sel = resolveGlyphSelection(baseGlyph, glyphs.value, input.value, letters);
-			const c = sel.letterChar;
-			if(!c) return null;
-			const info = letters[c];
-			if(!info || info.kind === 'diacritic') return null;
-			return { cluster: unit.cluster, char: c };
-		})
-		.filter((x): x is { cluster: number; char: string } => x !== null);
+		.flatMap(unit => {
+			return unit.glyphs
+				.map(glyph => {
+					const sel = resolveGlyphSelection(glyph, glyphs.value, input.value, letters);
+					const c = sel.letterChar;
+					if(!c) return null;
+					const info = letters[c];
+					if(!info) return null;
+					return { cluster: unit.cluster, char: c, glyphId: glyph.glyphId };
+				})
+				.filter((x): x is { cluster: number; char: string; glyphId: number } => x !== null);
+		});
 });
 
 const quizTarget = computed(() => quizActive.value ? quizQueue.value[quizIndex.value] ?? null : null);
@@ -405,20 +405,24 @@ function quizNext() {
 	quizFeedback.value = null;
 }
 
-function flashFeedback(char: string, status: 'correct' | 'wrong') {
+function normalizeQuizChar(char: string): string {
+	return char.replace(/ـ/g, '').normalize('NFC');
+}
+
+function flashFeedback(key: { char: string; key_id: string }, status: 'correct' | 'wrong') {
 	if(feedbackTimer) clearTimeout(feedbackTimer);
-	quizFeedback.value = { char, status };
+	quizFeedback.value = { char: key.char, key_id: key.key_id, status };
 	feedbackTimer = setTimeout(() => { quizFeedback.value = null; }, 450);
 }
 
-function onKeyboardKey(char: string) {
+function onKeyboardKey(key: { char: string; key_id: string }) {
 	const target = quizTarget.value;
 	if(!target) return;
-	if(char === target.char) {
-		flashFeedback(char, 'correct');
+	if(normalizeQuizChar(key.char) === normalizeQuizChar(target.char)) {
+		flashFeedback(key, 'correct');
 		setTimeout(() => quizNext(), 350);
 	} else {
-		flashFeedback(char, 'wrong');
+		flashFeedback(key, 'wrong');
 	}
 }
 
@@ -473,13 +477,13 @@ watch(input, () => { stopQuiz(); });
 		<div ref="canvasRef" class="shape_canvas">
 		<svg :width="layoutWidth" :height="layoutHeight" :viewBox="`0 0 ${layoutWidth} ${layoutHeight}`">
 			<g :transform="`translate(${runOffsetX}, ${emPx + ASCENDER_SLACK_PX}) scale(1, -1)`">
-				<g v-for="(group, ui) in glyphClusters" :key="ui" :class="{ 'glyph-cluster': true, selected: ui === currentUnitIndex, quiz_target: quizTarget && group.cluster === quizTarget.cluster }" :data-cluster="group.cluster">
+				<g v-for="(group, ui) in glyphClusters" :key="ui" :class="{ 'glyph-cluster': true, selected: ui === currentUnitIndex }" :data-cluster="group.cluster">
 					<template v-for="(g, i) in group.glyphs" :key="i">
 						<path
 							v-if="g.path"
 							:d="g.path"
 							:transform="`translate(${g.x * scale},${g.y * scale}) scale(${scale})`"
-							:class="{ 'glyph-path': true, missing: g.missing }"
+							:class="{ 'glyph-path': true, missing: g.missing, quiz_target: quizTarget && g.glyphId === quizTarget.glyphId }"
 							:data-cluster="g.cluster"
 							:data-glyph-name="g.glyphName"
 							@click="selectGlyph(g)"
@@ -898,7 +902,7 @@ svg {
 	fill: var(--accent_honor);
 }
 
-.glyph-cluster.quiz_target .glyph-path {
+.glyph-path.quiz_target {
 	fill: var(--accent_honor);
 	animation: quiz_pulse 1.4s ease-in-out infinite;
 }
