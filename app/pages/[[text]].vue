@@ -430,7 +430,17 @@ watch(input, () => { stopQuiz(); });
 		<h3>Marhaba! Paste arabic text to the box below and explore the script letter by letter.</h3>
 
 		<div class="field">
-			<input id="shape_input" v-model="input" class="text_input ar" dir="rtl" >
+			<div class="field_top_row">
+				<div class="examples examples_inline">
+					<button v-for="ex in commonWordList.slice(0, PINNED_COMMON_WORDS_COUNT)" :key="ex.text" type="button" class="example_chip" @click="input = ex.text">
+						<span class="ex_text ar">{{ ex.text }}</span>
+					</button>
+					<button type="button" class="example_chip example_chip_random" :disabled="!commonWordList.length" aria-label="random common word" @click="pickRandomCommonWord">
+						<img src="/ghost.svg" alt="" class="ghost_icon" aria-hidden="true">
+					</button>
+				</div>
+				<input id="shape_input" v-model="input" class="text_input ar" dir="rtl" >
+			</div>
 			<div v-if="currentCommonWord" class="field_translation">
 				<span class="show_label">show:</span>
 				<button type="button" class="translation_toggle_btn" @click="transliterationRevealed = !transliterationRevealed">
@@ -457,18 +467,6 @@ watch(input, () => { stopQuiz(); });
 		<div v-if="hasMissingGlyphs" class="notice notice_danger">
 			This font doesn't have glyphs for some characters in the text. Try a different font.
 		</div>
-
-		<section class="examples_section">
-			<div class="label-eyebrow">Try one</div>
-			<div class="examples">
-				<button v-for="ex in commonWordList.slice(0, PINNED_COMMON_WORDS_COUNT)" :key="ex.text" type="button" class="example_chip" @click="input = ex.text">
-					<span class="ex_text ar">{{ ex.text }}</span>
-				</button>
-				<button type="button" class="example_chip example_chip_random" :disabled="!commonWordList.length" aria-label="random common word" @click="pickRandomCommonWord">
-					<img src="/ghost.svg" alt="" class="ghost_icon" aria-hidden="true">
-				</button>
-			</div>
-		</section>
 
 		<div v-if="error" class="notice notice_danger">Error: {{ error.message }}</div>
 
@@ -638,6 +636,13 @@ watch(input, () => { stopQuiz(); });
 	gap: 6px;
 }
 
+.field_top_row {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
 .text_input {
 	height: 56px;
 	padding: 0 16px;
@@ -651,6 +656,8 @@ watch(input, () => { stopQuiz(); });
 	transition: border-color .15s, box-shadow .15s;
 	outline: none;
 	width: 100%;
+	flex: 1 1 20rem;
+	min-width: 16rem;
 }
 
 .text_input:focus {
@@ -766,24 +773,56 @@ watch(input, () => { stopQuiz(); });
 }
 
 /* ── Examples / chips ──────────────────────────────────── */
-.examples_section {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-}
-
 .examples {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 8px;
 }
 
+.examples_inline {
+	flex: 0 1 auto;
+	flex-wrap: nowrap;
+	max-width: 100%;
+}
+
+.examples_inline .example_chip {
+	flex: 0 0 auto;
+}
+
+@container page (max-width: 52rem) {
+	.field_top_row .examples_inline,
+	.field_top_row .text_input {
+		flex: 1 1 100%;
+	}
+
+	.field_top_row .examples_inline .example_chip {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+}
+
+@supports not (container-type: inline-size) {
+	@media (max-width: 900px) {
+		.field_top_row .examples_inline,
+		.field_top_row .text_input {
+			flex: 1 1 100%;
+		}
+
+		.field_top_row .examples_inline .example_chip {
+			flex: 1 1 0;
+			min-width: 0;
+		}
+	}
+}
+
 .example_chip {
 	display: inline-flex;
 	flex-direction: column;
 	align-items: center;
+	justify-content: center;
 	gap: 2px;
-	padding: 8px 14px;
+	height: 56px;
+	padding: 0 14px;
 	background: var(--surface_bg);
 	border: 1px solid var(--subtle_stroke);
 	border-radius: var(--r_3);
@@ -1263,6 +1302,9 @@ svg {
 @media (max-width: 640px) {
 	.shape_page { gap: 16px; }
 	.hero h1 { font-size: clamp(1.5rem, 6vw, 2rem); }
+	.field_top_row .text_input { min-width: 0; }
+	.example_chip { height: 48px; }
+	.example_chip .ex_text { font-size: clamp(1rem, 3.9vw, 1.15rem); }
 	.text_input { height: 48px; font-size: 18px; padding: 0 12px; }
 	.panel_body { padding: 14px; }
 	.letter_row { gap: 12px; }

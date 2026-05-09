@@ -62,6 +62,7 @@
 		max-width: 960px;
 		margin: 0 auto;
 		padding: clamp(20px, 4vw, 40px);
+		padding-top: calc(clamp(20px, 4vw, 40px) + 52px);
 		container-type: inline-size;
 		container-name: page;
 	}
@@ -72,6 +73,9 @@
 			gap: 10px;
 		}
 		.brand_mark { width: 32px; height: 32px; }
-		.page { padding: 16px; }
+		.page {
+			padding: 16px;
+			padding-top: 60px;
+		}
 	}
 </style>
