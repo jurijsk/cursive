@@ -91,7 +91,7 @@ function pickRandomCommonWord() {
 		return;
 	}
 
-	let nextEntry = randomPool[0]!;
+	let nextEntry = randomPool[Math.floor(Math.random() * randomPool.length)]!;
 	let attempts = 0;
 	while(nextEntry.text === input.value && attempts < 10) {
 		nextEntry = randomPool[Math.floor(Math.random() * randomPool.length)]!;
@@ -976,7 +976,8 @@ svg {
 }
 
 .nav_btn:hover:not(:disabled) {
-	background: var(--hover_secondary_button_bg);
+	background: var(--quiet_button_bg);
+	border-color: var(--quiet_button_border);
 }
 
 .nav_btn:disabled {
@@ -1206,8 +1207,8 @@ svg {
 }
 
 .quiz_cta:hover {
-	background: var(--accent_primary);
-	color: var(--inverse_text);
+	background: var(--quiet_button_bg);
+	border-color: var(--quiet_button_border);
 }
 
 .quiz_cta_label {
