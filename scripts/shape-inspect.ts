@@ -268,7 +268,7 @@ function buildSvg(results: ShapeResult[], emPx: number): string {
 	return [
 		`<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="${totalHeight}" style="background:#fff">`,
 		...rows,
-		`</svg>`
+		'</svg>'
 	].join('\n');
 }
 
@@ -287,7 +287,7 @@ function buildHtmlTable(result: ShapeResult): string {
 		const rowClass = g.missing ? ' class="missing"' : g.xAdvance === 0 ? ' class="mark"' : '';
 		const nameTd = g.glyphName
 			? `<td class="mono">${esc(g.glyphName)}</td>`
-			: `<td class="mono dim">(no name)</td>`;
+			: '<td class="mono dim">(no name)</td>';
 		return `<tr${rowClass}>
       <td class="num">${g.index}</td>
       <td class="num">${g.glyphId}</td>

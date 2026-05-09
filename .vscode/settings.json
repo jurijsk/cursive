@@ -28,6 +28,10 @@
 	"chat.tools.terminal.autoApprove": {
 		"npx playwright": true,
 		"gh run view": true,
-		"gh run watch": true
+		"gh run watch": true,
+		"git remote": true,
+		"az": true,
+		"gh": true,
+		".\\scripts\\azure\\create-swa.ps1": true
 	}
 }

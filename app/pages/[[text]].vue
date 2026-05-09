@@ -2,6 +2,7 @@
 import { storeToRefs } from 'pinia';
 import { letters } from '~/data/letters';
 import { findVocalizableMatches, applySpellings } from '~/data/spellings';
+import commonWords from '~/data/common_words.json';
 import { useSettingsStore, type FontKey } from '~/stores/settings';
 import { groupGlyphsIntoUnits, resolveGlyphSelection, letterPreviewInContext, findPrevBaseChar, findNextBaseChar } from '~/utils/glyphs';
 
@@ -53,15 +54,52 @@ const fontOptions: FontOption[] = [
 const settings = useSettingsStore();
 const { font: selectedFont, dialect } = storeToRefs(settings);
 
-const examples: { label: string; text: string; }[] = [
-	{ label: 'marhaba', text: 'مرحبا' },
-	{ label: 'habibi', text: 'حبيبي' },
-	{ label: 'shukran', text: 'شكرا' },
-	// Vocalized examples — show how a word looks with full diacritics so
-	// learners can see fatha, kasra, damma, sukun, shadda, tanwins, madda etc.
-	{ label: 'kataba (he wrote)', text: 'كَتَبَ' },
-	{ label: 'jameelah (beautiful)', text: 'جَمِيلَةٌ' }
-];
+interface CommonWordEntry {
+	text: string;
+	transliteration: string;
+	translation: string;
+}
+
+const commonWordList = (commonWords as CommonWordEntry[])
+	.map((entry) => ({
+		text: entry.text.trim(),
+		transliteration: entry.transliteration.trim(),
+		translation: entry.translation.trim()
+	}))
+	.filter(entry => entry.text.length > 0 && entry.translation.length > 0);
+
+const currentCommonWord = computed(() => {
+	const normalizedInput = input.value.trim();
+	if(!normalizedInput) return null;
+	return commonWordList.find(entry => entry.text === normalizedInput) ?? null;
+});
+
+const translationRevealed = ref(false);
+const transliterationRevealed = ref(false);
+const PINNED_COMMON_WORDS_COUNT = 5;
+
+watch(input, () => {
+	translationRevealed.value = false;
+	transliterationRevealed.value = false;
+});
+
+function pickRandomCommonWord() {
+	const randomPool = commonWordList.slice(PINNED_COMMON_WORDS_COUNT);
+	if(randomPool.length === 0) return;
+	if(randomPool.length === 1) {
+		input.value = randomPool[0]!.text;
+		return;
+	}
+
+	let nextEntry = randomPool[0]!;
+	let attempts = 0;
+	while(nextEntry.text === input.value && attempts < 10) {
+		nextEntry = randomPool[Math.floor(Math.random() * randomPool.length)]!;
+		attempts++;
+	}
+
+	input.value = nextEntry.text;
+}
 
 const DESIRED_EM = 120; // preferred px em size when there's enough room
 const MAX_EM = 200; // don't grow beyond this when text is short
@@ -393,6 +431,17 @@ watch(input, () => { stopQuiz(); });
 
 		<div class="field">
 			<input id="shape_input" v-model="input" class="text_input ar" dir="rtl" >
+			<div v-if="currentCommonWord" class="field_translation">
+				<span class="show_label">show:</span>
+				<button type="button" class="translation_toggle_btn" @click="transliterationRevealed = !transliterationRevealed">
+					<span v-if="!transliterationRevealed">transliteration</span>
+					<span v-else class="revealed_text">{{ currentCommonWord.transliteration }}</span>
+				</button>
+				<button type="button" class="translation_toggle_btn" @click="translationRevealed = !translationRevealed">
+					<span v-if="!translationRevealed">translation</span>
+					<span v-else class="revealed_text">{{ currentCommonWord.translation }}</span>
+				</button>
+			</div>
 		</div>
 
 		<div v-if="hasLigature" class="notice notice_saffron">
@@ -412,9 +461,11 @@ watch(input, () => { stopQuiz(); });
 		<section class="examples_section">
 			<div class="label-eyebrow">Try one</div>
 			<div class="examples">
-				<button v-for="ex in examples" :key="ex.text" type="button" class="example_chip" @click="input = ex.text">
+				<button v-for="ex in commonWordList.slice(0, PINNED_COMMON_WORDS_COUNT)" :key="ex.text" type="button" class="example_chip" @click="input = ex.text">
 					<span class="ex_text ar">{{ ex.text }}</span>
-					<span class="ex_label">{{ ex.label }}</span>
+				</button>
+				<button type="button" class="example_chip example_chip_random" :disabled="!commonWordList.length" aria-label="random common word" @click="pickRandomCommonWord">
+					<img src="/ghost.svg" alt="" class="ghost_icon" aria-hidden="true">
 				</button>
 			</div>
 		</section>
@@ -607,6 +658,36 @@ watch(input, () => { stopQuiz(); });
 	box-shadow: 0 0 0 3px var(--focus_field_ring);
 }
 
+.field_translation {
+	font-family: var(--f_mono);
+	font-size: 12px;
+	color: var(--secondary_text);
+	padding-inline: 4px;
+	text-align: end;
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+	align-items: baseline;
+
+	.show_label {
+		color: var(--tertiary_text);
+	}
+}
+
+.translation_toggle_btn {
+	font: inherit;
+	color: var(--accent_primary_hi);
+	background: transparent;
+	border: 0;
+	padding: 0;
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+.translation_toggle_btn:hover {
+	color: var(--accent_primary);
+}
+
 /* ── Notice cards ──────────────────────────────────────── */
 .notice {
 	display: flex;
@@ -714,6 +795,23 @@ watch(input, () => { stopQuiz(); });
 .example_chip:hover {
 	background: var(--quiet_button_bg);
 	border-color: var(--quiet_button_border);
+}
+
+.example_chip:disabled {
+	opacity: .5;
+	cursor: default;
+}
+
+.example_chip_random {
+	justify-content: center;
+	min-width: 3.25rem;
+	padding-inline: 10px;
+}
+
+.ghost_icon {
+	width: 1.35rem;
+	height: 1.35rem;
+	object-fit: contain;
 }
 
 .ex_text {
