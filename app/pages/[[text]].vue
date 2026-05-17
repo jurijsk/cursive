@@ -2,7 +2,6 @@
 import { storeToRefs } from 'pinia';
 import { letters } from '~/data/letters';
 import { findVocalizableMatches, applySpellings } from '~/data/spellings';
-import commonWords from '~/data/common_words.json';
 import { useSettingsStore, type FontKey } from '~/stores/settings';
 import { groupGlyphsIntoUnits, resolveGlyphSelection, letterPreviewInContext, findPrevBaseChar, findNextBaseChar } from '~/utils/glyphs';
 
@@ -53,53 +52,6 @@ const fontOptions: FontOption[] = [
 // survive reloads and (later) sync with a user account.
 const settings = useSettingsStore();
 const { font: selectedFont, dialect } = storeToRefs(settings);
-
-interface CommonWordEntry {
-	text: string;
-	transliteration: string;
-	translation: string;
-}
-
-const commonWordList = (commonWords as CommonWordEntry[])
-	.map((entry) => ({
-		text: entry.text.trim(),
-		transliteration: entry.transliteration.trim(),
-		translation: entry.translation.trim()
-	}))
-	.filter(entry => entry.text.length > 0 && entry.translation.length > 0);
-
-const currentCommonWord = computed(() => {
-	const normalizedInput = input.value.trim();
-	if(!normalizedInput) return null;
-	return commonWordList.find(entry => entry.text === normalizedInput) ?? null;
-});
-
-const translationRevealed = ref(false);
-const transliterationRevealed = ref(false);
-const PINNED_COMMON_WORDS_COUNT = 5;
-
-watch(input, () => {
-	translationRevealed.value = false;
-	transliterationRevealed.value = false;
-});
-
-function pickRandomCommonWord() {
-	const randomPool = commonWordList.slice(PINNED_COMMON_WORDS_COUNT);
-	if(randomPool.length === 0) return;
-	if(randomPool.length === 1) {
-		input.value = randomPool[0]!.text;
-		return;
-	}
-
-	let nextEntry = randomPool[Math.floor(Math.random() * randomPool.length)]!;
-	let attempts = 0;
-	while(nextEntry.text === input.value && attempts < 10) {
-		nextEntry = randomPool[Math.floor(Math.random() * randomPool.length)]!;
-		attempts++;
-	}
-
-	input.value = nextEntry.text;
-}
 
 const DESIRED_EM = 120; // preferred px em size when there's enough room
 const MAX_EM = 200; // don't grow beyond this when text is short
@@ -351,112 +303,149 @@ watch(input, () => {
 onUnmounted(() => {
 	if(shapeTimer) clearTimeout(shapeTimer);
 	if(urlTimer) clearTimeout(urlTimer);
+	if(testFeedbackTimer) clearTimeout(testFeedbackTimer);
 });
 
-// ── Quiz mode ─────────────────────────────────────────────
-// "Test your knowledge": pick base letters (no diacritics) from the current
-// input in reading order; user types each one on the on-screen keyboard.
-const quizActive = ref(false);
-const quizIndex = ref(0);
-const quizFeedback = ref<{ char: string; key_id: string; status: 'correct' | 'wrong' } | null>(null);
-let feedbackTimer: ReturnType<typeof setTimeout> | null = null;
+// ── Panel mode ────────────────────────────────────────────
+type PanelMode = 'teach' | 'test';
+const panelMode = ref<PanelMode | null>(null);
+watch(input, () => { panelMode.value = null; });
 
-// Cluster groups in reading order with all characters (letters and diacritics).
-// Each glyph in each cluster becomes a separate quiz item.
-const quizQueue = computed(() => {
-	return glyphClusters.value
-		.flatMap(unit => {
-			return unit.glyphs
-				.map(glyph => {
-					const sel = resolveGlyphSelection(glyph, glyphs.value, input.value, letters);
-					const c = sel.letterChar;
-					if(!c) return null;
-					const info = letters[c];
-					if(!info) return null;
-					return { cluster: unit.cluster, char: c, glyphId: glyph.glyphId };
-				})
-				.filter((x): x is { cluster: number; char: string; glyphId: number } => x !== null);
-		});
-});
-
-const quizTarget = computed(() => quizActive.value ? quizQueue.value[quizIndex.value] ?? null : null);
-
-function startQuiz() {
-	if(quizQueue.value.length === 0) return;
-	quizActive.value = true;
-	quizIndex.value = 0;
-	quizFeedback.value = null;
-	selectedGlyph.value = null;
-}
-
-function stopQuiz() {
-	quizActive.value = false;
-	quizFeedback.value = null;
-}
-
-function quizPrev() {
-	if(quizIndex.value > 0) quizIndex.value--;
-	quizFeedback.value = null;
-}
-
-function quizNext() {
-	if(quizIndex.value < quizQueue.value.length - 1) quizIndex.value++;
-	else stopQuiz(); // finished — close keyboard
-	quizFeedback.value = null;
-}
-
-function normalizeQuizChar(char: string): string {
-	return char.replace(/ـ/g, '').normalize('NFC');
-}
-
-function flashFeedback(key: { char: string; key_id: string }, status: 'correct' | 'wrong') {
-	if(feedbackTimer) clearTimeout(feedbackTimer);
-	quizFeedback.value = { char: key.char, key_id: key.key_id, status };
-	feedbackTimer = setTimeout(() => { quizFeedback.value = null; }, 450);
-}
-
-function onKeyboardKey(key: { char: string; key_id: string }) {
-	const target = quizTarget.value;
-	if(!target) return;
-	if(normalizeQuizChar(key.char) === normalizeQuizChar(target.char)) {
-		flashFeedback(key, 'correct');
-		setTimeout(() => quizNext(), 350);
-	} else {
-		flashFeedback(key, 'wrong');
+function enterTeachMode() {
+	panelMode.value = 'teach';
+	if(!selectedGlyph.value) {
+		const firstUnit = glyphClusters.value[0];
+		if(firstUnit?.glyphs[0]) selectedGlyph.value = firstUnit.glyphs[0];
 	}
 }
 
-// Reset quiz when input changes (queue is no longer valid).
-watch(input, () => { stopQuiz(); });
+// ── Test mode ─────────────────────────────────────────────
+// Letters from the current text in reading order, eligible for quizzing.
+const testQueue = computed(() =>
+	glyphClusters.value.flatMap(unit =>
+		unit.glyphs
+			.map(glyph => {
+				const sel = resolveGlyphSelection(glyph, glyphs.value, input.value, letters);
+				const c = sel.letterChar;
+				if(!c) return null;
+				const info = letters[c];
+				if(!info || info.kind === 'extender') return null;
+				// Skip non-phonemic marks (e.g. maddah) — only exclude if non-phonemic in both dialects
+				if(info.pronunciation['palestinian'].ipa.startsWith('(') && info.pronunciation['lebanese'].ipa.startsWith('(')) return null;
+				return { cluster: unit.cluster, char: c, glyphId: glyph.glyphId };
+			})
+			.filter((x): x is { cluster: number; char: string; glyphId: number } => x !== null)
+	)
+);
+
+const testIndex = ref(0);
+
+interface TestOption {
+	char: string;
+	ipa: string;
+	testDescription: string;
+	isCorrect: boolean;
+}
+
+const testFeedback = ref<{ char: string; status: 'correct' | 'wrong' } | null>(null);
+let testFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
+
+const testTarget = computed(() =>
+	panelMode.value === 'test' ? testQueue.value[testIndex.value] ?? null : null
+);
+
+const testOptionChars = ref<{ char: string; isCorrect: boolean }[]>([]);
+
+const testOptionsShuffled = computed<TestOption[]>(() => {
+	const d = dialect.value;
+	return testOptionChars.value.map(({ char, isCorrect }) => {
+		const info = letters[char];
+		if(!info) return { char, ipa: '', testDescription: '', isCorrect };
+		const pron = info.pronunciation[d];
+		return { char, ipa: shortIpa(pron), testDescription: pron.testDescription, isCorrect };
+	});
+});
+
+function isPhonemic(l: { pronunciation: Record<string, { ipa: string }> }, d: string): boolean {
+	return !l.pronunciation[d]?.ipa.startsWith('(');
+}
+
+function shortIpa(pron: { ipa: string; ipaShort?: string }): string {
+	return pron.ipaShort ?? pron.ipa.split(' or ')[0]!;
+}
+
+function rollTestOptions() {
+	const target = testTarget.value;
+	if(!target) { testOptionChars.value = []; return; }
+	const targetInfo = letters[target.char];
+	if(!targetInfo) { testOptionChars.value = []; return; }
+	const d = dialect.value;
+	const pron = targetInfo.pronunciation[d];
+	// Distractors must be the same kind (consonant vs diacritic) and phonemic,
+	// and distinct from the target's sound in the current dialect
+	const pool = Object.values(letters).filter(l =>
+		l.kind === targetInfo.kind &&
+		l.char !== target.char &&
+		isPhonemic(l, d) &&
+		l.pronunciation[d].testDescription !== pron.testDescription
+	);
+	const distractorChars = [...pool]
+		.sort(() => Math.random() - 0.5)
+		.slice(0, 5)
+		.map(l => ({ char: l.char, isCorrect: false as const }));
+	testOptionChars.value = [...distractorChars, { char: target.char, isCorrect: true as const }]
+		.sort(() => Math.random() - 0.5);
+}
+
+watch(testTarget, (target) => {
+	testFeedback.value = null;
+	if(target) selectTestTarget(target);
+	rollTestOptions();
+}, { immediate: true });
+
+function selectTestTarget(target: { cluster: number; glyphId: number }) {
+	const g = glyphs.value.find(g => g.cluster === target.cluster && g.glyphId === target.glyphId);
+	if(g) selectedGlyph.value = g;
+}
+
+function enterTestMode() {
+	testFeedback.value = null;
+	const sel = selectedGlyph.value;
+	const startIndex = sel
+		? Math.max(0, testQueue.value.findIndex(t => t.cluster === sel.cluster))
+		: 0;
+	testIndex.value = startIndex;
+	panelMode.value = 'test';
+	// Synchronously select the first target so the highlight is immediate
+	const target = testQueue.value[startIndex];
+	if(target) selectTestTarget(target);
+}
+
+function testPrev() {
+	if(testIndex.value > 0) testIndex.value--;
+}
+
+function testNext() {
+	if(testIndex.value < testQueue.value.length - 1) testIndex.value++;
+	else { panelMode.value = null; selectedGlyph.value = null; }
+}
+
+function onTestAnswer(opt: TestOption) {
+	if(testFeedback.value) return;
+	testFeedback.value = { char: opt.char, status: opt.isCorrect ? 'correct' : 'wrong' };
+	if(testFeedbackTimer) clearTimeout(testFeedbackTimer);
+	if(opt.isCorrect) {
+		testFeedbackTimer = setTimeout(() => { testFeedback.value = null; testNext(); }, 600);
+	} else {
+		testFeedbackTimer = setTimeout(() => { testFeedback.value = null; }, 450);
+	}
+}
 </script>
 <template>
 	<div class="shape_page" :style="{ '--current_arabic_font': fontFamily }">
 		<h3>Marhaba! Paste arabic text to the box below and explore the script letter by letter.</h3>
 
-		<div class="field">
-			<div class="field_top_row">
-				<div class="examples examples_inline">
-					<button v-for="ex in commonWordList.slice(0, PINNED_COMMON_WORDS_COUNT)" :key="ex.text" type="button" class="example_chip" @click="input = ex.text">
-						<span class="ex_text ar">{{ ex.text }}</span>
-					</button>
-					<button type="button" class="example_chip example_chip_random" :disabled="!commonWordList.length" aria-label="random common word" @click="pickRandomCommonWord">
-						<img src="/ghost.svg" alt="" class="ghost_icon" aria-hidden="true">
-					</button>
-				</div>
-				<input id="shape_input" v-model="input" class="text_input ar" dir="rtl" >
-			</div>
-			<div v-if="currentCommonWord" class="field_translation">
-				<span class="show_label">show:</span>
-				<button type="button" class="translation_toggle_btn" @click="transliterationRevealed = !transliterationRevealed">
-					<span v-if="!transliterationRevealed">transliteration</span>
-					<span v-else class="revealed_text">{{ currentCommonWord.transliteration }}</span>
-				</button>
-				<button type="button" class="translation_toggle_btn" @click="translationRevealed = !translationRevealed">
-					<span v-if="!translationRevealed">translation</span>
-					<span v-else class="revealed_text">{{ currentCommonWord.translation }}</span>
-				</button>
-			</div>
-		</div>
+		<WordInputRow v-model="input" />
 
 		<div v-if="hasLigature" class="notice notice_saffron">
 			<span>Contains a ligature character. Decomposed:</span>
@@ -474,153 +463,78 @@ watch(input, () => { stopQuiz(); });
 
 		<div v-if="error" class="notice notice_danger">Error: {{ error.message }}</div>
 
-		<div ref="canvasRef" class="shape_canvas">
-		<svg :width="layoutWidth" :height="layoutHeight" :viewBox="`0 0 ${layoutWidth} ${layoutHeight}`">
-			<g :transform="`translate(${runOffsetX}, ${emPx + ASCENDER_SLACK_PX}) scale(1, -1)`">
-				<g v-for="(group, ui) in glyphClusters" :key="ui" :class="{ 'glyph-cluster': true, selected: ui === currentUnitIndex }" :data-cluster="group.cluster">
-					<template v-for="(g, i) in group.glyphs" :key="i">
-						<path
-							v-if="g.path"
-							:d="g.path"
-							:transform="`translate(${g.x * scale},${g.y * scale}) scale(${scale})`"
-							:class="{ 'glyph-path': true, missing: g.missing, quiz_target: quizTarget && g.glyphId === quizTarget.glyphId }"
-							:data-cluster="g.cluster"
-							:data-glyph-name="g.glyphName"
-							@click="selectGlyph(g)"
-						/>
-						<rect v-else :x="g.x * scale" y="-2" :width="8" height="4" fill="red" />
-					</template>
+		<div ref="canvasRef" class="shape_canvas" :class="{ test_mode: panelMode === 'test' }">
+			<svg :width="layoutWidth" :height="layoutHeight" :viewBox="`0 0 ${layoutWidth} ${layoutHeight}`">
+				<g :transform="`translate(${runOffsetX}, ${emPx + ASCENDER_SLACK_PX}) scale(1, -1)`">
+					<g v-for="(group, ui) in glyphClusters" :key="ui" :class="{ 'glyph-cluster': true, selected: ui === currentUnitIndex }" :data-cluster="group.cluster">
+						<template v-for="(g, i) in group.glyphs" :key="i">
+							<path
+								v-if="g.path"
+								:d="g.path"
+								:transform="`translate(${g.x * scale},${g.y * scale}) scale(${scale})`"
+								:class="{ 'glyph-path': true, missing: g.missing }"
+								:data-cluster="g.cluster"
+								:data-glyph-name="g.glyphName"
+								@click="selectGlyph(g)"
+							/>
+							<rect v-else :x="g.x * scale" y="-2" :width="8" height="4" fill="red" />
+						</template>
+					</g>
 				</g>
-			</g>
-		</svg>
+			</svg>
 		</div>
 
 		<aside v-if="glyphs.length" class="info_panel">
 			<div class="panel_body">
-				<div class="panel_top_row">
-					<div v-if="selectedLetter" class="letter_row">
-						<span class="hero_letter ar">{{ selectedLetter.kind === 'diacritic' ? 'ـ' + selectedLetter.char : selectedLetter.char }}</span>
-						<div class="letter_info">
-							<div class="letter_name">
-								{{ selectedLetter.name }}
-							</div>
-							<div class="letter_translit"><span class="label-eyebrow">Transliteration</span> {{ selectedLetter.transliteration.join(', ') }}</div>
-						</div>
-					</div>
-					<div class="panel_nav">
-						<button
-							type="button"
-							class="nav_btn"
-							:disabled="!prevUnit"
-							@click="selectAdjacent(prevUnit)"
-						>
-							<span class="nav_arrow">←</span>
-							<span class="nav_preview">{{ prevPreview }}</span>
+				<template v-if="panelMode === null">
+					<div class="mode_chooser">
+						<button type="button" class="mode_btn" @click="enterTeachMode">
+							<span class="mode_btn_title">Teach me</span>
+							<span class="mode_btn_sub">Explore letter by letter</span>
 						</button>
-						<button
-							type="button"
-							class="nav_btn"
-							:disabled="!nextUnit"
-							@click="selectAdjacent(nextUnit)"
-						>
-							<span class="nav_preview">{{ nextPreview }}</span>
-							<span class="nav_arrow">→</span>
+						<button type="button" class="mode_btn" @click="enterTestMode">
+							<span class="mode_btn_title">Test me</span>
+							<span class="mode_btn_sub">Guess the pronunciation</span>
 						</button>
 					</div>
-				</div>
-				<template v-if="selectedLetter">
-					<div v-if="selectedLetter.kind === 'letter' || selectedLetter.kind === 'diacritic'" class="forms_row">
-						<template v-if="selectedLetter.kind === 'letter'">
-							<div class="form_cell">
-								<div class="form_label">isolated</div>
-								<div class="form_glyph ar">{{ selectedLetter.char }}</div>
-							</div>
-							<div class="form_cell">
-								<div class="form_label">initial</div>
-								<div class="form_glyph ar">{{ selectedLetter.char }}<span class="form_tatweel">ـ</span></div>
-							</div>
-							<div class="form_cell">
-								<div class="form_label">medial</div>
-								<div class="form_glyph ar"><span class="form_tatweel">ـ</span>{{ selectedLetter.char }}<span class="form_tatweel">ـ</span></div>
-							</div>
-							<div class="form_cell">
-								<div class="form_label">final</div>
-								<div class="form_glyph ar"><span class="form_tatweel">ـ</span>{{ selectedLetter.char }}</div>
-							</div>
-						</template>
-						<div v-else class="form_cell form_cell_message">
-							<div class="form_label">forms</div>
-							<div class="form_message">Diacritics do not have letter forms.</div>
-						</div>
-					</div>
-					<div class="pron_card">
-						<div class="pron_header">
-							<div class="label-eyebrow">Pronunciation</div>
-							<div class="dialect_picker">
-								<button
-									type="button"
-									class="dialect_btn"
-									:class="{ active: dialect === 'palestinian' }"
-									@click="dialect = 'palestinian'"
-								>Palestinian</button>
-								<button
-									type="button"
-									class="dialect_btn"
-									:class="{ active: dialect === 'lebanese' }"
-									@click="dialect = 'lebanese'"
-								>Lebanese</button>
-							</div>
-						</div>
-						<div class="pron_ipa">{{ selectedLetter.pronunciation[dialect].ipa }}</div>
-						<div class="pron_desc">{{ selectedLetter.pronunciation[dialect].description }}</div>
-						<div v-if="selectedLetter.pronunciation[dialect].englishExamples.length" class="pron_examples">
-							<span class="label-eyebrow">English examples</span>
-							<span>{{ selectedLetter.pronunciation[dialect].englishExamples.join(', ') }}</span>
-						</div>
-					</div>
 				</template>
-				<div v-else-if="selection" class="no_letter">No letter information available for this glyph.</div>
-				<template v-else>
-					<div class="info_hint">Click any letter above to see its name, sound, and contextual forms.</div>
-					<button v-if="!quizActive && quizQueue.length" type="button" class="quiz_cta" @click="startQuiz">
-						<span class="quiz_cta_label">Or test your knowledge</span>
-						<span class="quiz_cta_sub">Type the letters you can recognize.</span>
-					</button>
-				</template>
-				<div v-if="quizActive" class="quiz_panel">
-					<div class="quiz_header">
-						<div class="label-eyebrow">Quiz</div>
-						<div class="quiz_progress">{{ quizIndex + 1 }} / {{ quizQueue.length }}</div>
-						<button type="button" class="btn btn_quiet btn_sm" @click="stopQuiz">Done</button>
-					</div>
-					<p class="quiz_prompt">Type the highlighted letter on the keyboard.</p>
-					<OnScreenKeyboard
-						:target-char="quizTarget?.char ?? null"
-						:feedback="quizFeedback"
-						@key="onKeyboardKey"
-						@left="isRtl ? quizNext() : quizPrev()"
-						@right="isRtl ? quizPrev() : quizNext()"
+
+				<template v-else-if="panelMode === 'teach'">
+					<TeachPanel
+						:selected-letter="selectedLetter"
+						:has-selection="!!selection"
+						:has-prev="!!prevUnit"
+						:has-next="!!nextUnit"
+						:prev-preview="prevPreview"
+						:next-preview="nextPreview"
+						:dialect="dialect"
+						@prev="selectAdjacent(prevUnit)"
+						@next="selectAdjacent(nextUnit)"
+						@back="panelMode = null"
 					/>
-				</div>
+				</template>
+
+				<template v-else-if="panelMode === 'test'">
+					<TestPanel
+						:test-index="testIndex"
+						:test-queue-length="testQueue.length"
+						:test-options="testOptionsShuffled"
+						:test-feedback="testFeedback"
+						@prev="testPrev"
+						@next="testNext"
+						@done="panelMode = null"
+						@answer="onTestAnswer"
+					/>
+				</template>
 			</div>
 		</aside>
 
-		<section class="font_picker_section">
-			<div class="label-eyebrow">Font</div>
-			<div class="font_picker">
-				<button
-					v-for="f in fontOptions"
-					:key="f.key"
-					type="button"
-					class="font_btn"
-					:class="{ active: selectedFont === f.key }"
-					@click="selectedFont = f.key"
-				>
-					<span class="font_btn_sample ar" :style="{ fontFamily: f.family }">{{ input }}</span>
-					<span class="font_btn_label">{{ f.label }}</span>
-				</button>
-			</div>
-		</section>
+		<SettingsBar
+			v-model:font="selectedFont"
+			v-model:dialect="dialect"
+			:font-options="fontOptions"
+			:preview-text="input"
+		/>
 	</div>
 </template>
 
@@ -633,71 +547,6 @@ watch(input, () => { stopQuiz(); });
 	gap: 20px;
 }
 
-/* ── Field ─────────────────────────────────────────────── */
-.field {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-}
-
-.field_top_row {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: 8px;
-}
-
-.text_input {
-	height: 56px;
-	padding: 0 16px;
-	border-radius: var(--r_3);
-	background: var(--field_bg);
-	border: 1px solid var(--field_border);
-	box-shadow: var(--e_inset);
-	font-size: 22px;
-	color: var(--primary_text);
-	direction: rtl;
-	transition: border-color .15s, box-shadow .15s;
-	outline: none;
-	width: 100%;
-	flex: 1 1 20rem;
-	min-width: 16rem;
-}
-
-.text_input:focus {
-	border-color: var(--focus_field_border);
-	box-shadow: 0 0 0 3px var(--focus_field_ring);
-}
-
-.field_translation {
-	font-family: var(--f_mono);
-	font-size: 12px;
-	color: var(--secondary_text);
-	padding-inline: 4px;
-	text-align: end;
-	display: flex;
-	gap: 8px;
-	justify-content: flex-end;
-	align-items: baseline;
-
-	.show_label {
-		color: var(--tertiary_text);
-	}
-}
-
-.translation_toggle_btn {
-	font: inherit;
-	color: var(--accent_primary_hi);
-	background: transparent;
-	border: 0;
-	padding: 0;
-	cursor: pointer;
-	text-decoration: underline;
-}
-
-.translation_toggle_btn:hover {
-	color: var(--accent_primary);
-}
 
 /* ── Notice cards ──────────────────────────────────────── */
 .notice {
@@ -776,99 +625,6 @@ watch(input, () => { stopQuiz(); });
 	cursor: default;
 }
 
-/* ── Examples / chips ──────────────────────────────────── */
-.examples {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 8px;
-}
-
-.examples_inline {
-	flex: 0 1 auto;
-	flex-wrap: nowrap;
-	max-width: 100%;
-}
-
-.examples_inline .example_chip {
-	flex: 0 0 auto;
-}
-
-@container page (max-width: 52rem) {
-	.field_top_row .examples_inline,
-	.field_top_row .text_input {
-		flex: 1 1 100%;
-	}
-
-	.field_top_row .examples_inline .example_chip {
-		flex: 1 1 0;
-		min-width: 0;
-	}
-}
-
-@supports not (container-type: inline-size) {
-	@media (max-width: 900px) {
-		.field_top_row .examples_inline,
-		.field_top_row .text_input {
-			flex: 1 1 100%;
-		}
-
-		.field_top_row .examples_inline .example_chip {
-			flex: 1 1 0;
-			min-width: 0;
-		}
-	}
-}
-
-.example_chip {
-	display: inline-flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: 2px;
-	height: 56px;
-	padding: 0 14px;
-	background: var(--surface_bg);
-	border: 1px solid var(--subtle_stroke);
-	border-radius: var(--r_3);
-	color: var(--primary_text);
-	cursor: pointer;
-	transition: background-color .15s, border-color .15s;
-}
-
-.example_chip:hover {
-	background: var(--quiet_button_bg);
-	border-color: var(--quiet_button_border);
-}
-
-.example_chip:disabled {
-	opacity: .5;
-	cursor: default;
-}
-
-.example_chip_random {
-	justify-content: center;
-	min-width: 3.25rem;
-	padding-inline: 10px;
-}
-
-.ghost_icon {
-	width: 1.35rem;
-	height: 1.35rem;
-	object-fit: contain;
-}
-
-.ex_text {
-	font-size: 1.35rem;
-	color: var(--primary_text);
-	direction: rtl;
-}
-
-.ex_label {
-	font-family: var(--f_mono);
-	font-size: 10px;
-	letter-spacing: 0.02em;
-	color: var(--tertiary_text);
-}
 
 /* ── Shape canvas ──────────────────────────────────────── */
 .shape_canvas {
@@ -902,16 +658,6 @@ svg {
 	fill: var(--accent_honor);
 }
 
-.glyph-path.quiz_target {
-	fill: var(--accent_honor);
-	animation: quiz_pulse 1.4s ease-in-out infinite;
-}
-
-@keyframes quiz_pulse {
-	0%, 100% { opacity: 1; }
-	50% { opacity: 0.55; }
-}
-
 /* ── Info panel ────────────────────────────────────────── */
 .info_panel {
 	background: var(--surface_bg);
@@ -927,410 +673,70 @@ svg {
 	gap: 14px;
 }
 
-.panel_top_row {
+
+
+/* ── Mode chooser ─────────────────────────────────────── */
+.mode_chooser {
 	display: flex;
-	align-items: center;
-	justify-content: space-between;
 	gap: 12px;
-	min-width: 0;
 }
 
-@container page (max-width: 30rem) {
-	.panel_top_row {
-		flex-direction: column-reverse;
-		align-items: flex-start;
-	}
-	.panel_nav {
-		align-self: flex-end;
-	}
-}
-
-@supports not (container-type: inline-size) {
-	@media (max-width: 540px) {
-		.panel_top_row {
-			flex-direction: column-reverse;
-			align-items: flex-start;
-		}
-		.panel_nav {
-			align-self: flex-end;
-		}
-	}
-}
-
-.panel_nav {
-	display: flex;
-	justify-content: flex-end;
-	margin-inline-start: auto;
-	flex-shrink: 0;
-	gap: 8px;
-}
-
-.nav_btn {
-	display: inline-flex;
-	align-items: center;
-	gap: 8px;
-	padding: 6px 12px;
-	border: 1px solid var(--secondary_button_border);
-	border-radius: var(--r_2);
-	background: var(--secondary_button_bg);
-	color: var(--secondary_button_text);
-	cursor: pointer;
-	font-size: 13px;
-	transition: background-color .15s, border-color .15s;
-}
-
-.nav_btn:hover:not(:disabled) {
-	background: var(--quiet_button_bg);
-	border-color: var(--quiet_button_border);
-}
-
-.nav_btn:disabled {
-	opacity: 0.35;
-	cursor: default;
-}
-
-.nav_arrow {
-	font-size: 14px;
-	color: var(--tertiary_text);
-}
-
-.nav_preview {
-	font-family: var(--current_arabic_font), var(--f_arabic);
-	font-size: 1.6rem;
-	display: inline-block;
-	line-height: 1.3;
-	padding-block: 0.12em 0.04em;
-	direction: rtl;
-	min-width: 1.5rem;
-	text-align: center;
-	color: var(--primary_text);
-}
-
-.letter_row {
-	display: flex;
-	align-items: center;
-	gap: 18px;
-	min-width: 0;
-	flex: 1;
-}
-
-.letter_info {
-	flex: 1;
-	min-width: 0;
+.mode_btn {
+	flex: 1 1 0;
 	display: flex;
 	flex-direction: column;
-	gap: 4px;
-}
-
-.hero_letter {
-	font-size: 4rem;
-	line-height: 1;
-	min-width: 4.5rem;
-	text-align: center;
-	color: var(--accent_primary_hi);
-}
-
-.letter_name {
-	font-family: var(--f_display);
-	font-size: clamp(0.95rem, 2.6vw, 1.25rem);
-	font-weight: 500;
-	display: flex;
 	align-items: center;
-	flex-wrap: nowrap;
-	white-space: nowrap;
-	gap: 8px;
-	min-width: 0;
-}
-
-.letter_translit {
-	font-size: 13px;
-	color: var(--secondary_text);
-	display: flex;
-	gap: 8px;
-	align-items: baseline;
-}
-
-.forms_row {
-	display: grid;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
-	grid-auto-rows: 1fr;
-	gap: clamp(4px, 1.5vw, 10px);
-	min-height: clamp(72px, 9vw, 88px);
-}
-
-.form_cell {
-	text-align: center;
-	padding: clamp(6px, 2vw, 12px) clamp(2px, 1vw, 8px);
-	background: var(--page_bg);
-	border: 1px solid var(--subtle_stroke);
-	border-radius: var(--r_3);
-	min-width: 0;
-	height: 100%;
-}
-
-.form_cell_message {
-	grid-column: 1 / -1;
-	padding-inline: clamp(10px, 2.6vw, 16px);
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-}
-
-.form_label {
-	font-family: var(--f_mono);
-	font-size: 10px;
-	color: var(--tertiary_text);
-	text-transform: uppercase;
-	letter-spacing: 0.12em;
-	margin-bottom: 4px;
-}
-
-.form_glyph {
-	font-size: 1.9rem;
-	line-height: 1.1;
-	color: var(--primary_text);
-}
-
-.form_tatweel {
-	color: var(--muted_text);
-}
-
-.form_message {
-	font-size: 13px;
-	line-height: 1.4;
-	color: var(--secondary_text);
-}
-
-.pron_card {
-	background: var(--page_bg);
-	border: 1px solid var(--subtle_stroke);
-	border-radius: var(--r_3);
-	padding: 14px 16px;
-	display: flex;
-	flex-direction: column;
 	gap: 6px;
-}
-
-.pron_header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	flex-wrap: nowrap;
-	gap: 12px;
-	min-width: 0;
-	margin-bottom: 4px;
-}
-
-.pron_header > .label-eyebrow {
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	min-width: 0;
-}
-
-.dialect_picker {
-	display: flex;
-	flex-wrap: nowrap;
-	gap: 4px;
-	background: var(--surface_bg);
-	border: 1px solid var(--subtle_stroke);
-	border-radius: var(--r_pill);
-	padding: 3px;
-	flex-shrink: 0;
-}
-
-.dialect_btn {
-	padding: 4px clamp(8px, 2.4vw, 12px);
-	border: none;
-	border-radius: var(--r_pill);
-	background: transparent;
-	color: var(--secondary_text);
-	font-size: clamp(11px, 2.4vw, 12px);
-	font-weight: 500;
-	white-space: nowrap;
-	cursor: pointer;
-	transition: background-color .15s, color .15s;
-}
-
-.dialect_btn.active {
-	background: var(--accent_primary);
-	color: var(--on_primary_text);
-}
-
-.pron_ipa {
-	font-family: var(--f_mono);
-	font-size: 1rem;
-	color: var(--primary_text);
-}
-
-.pron_desc {
-	font-size: 13px;
-	color: var(--secondary_text);
-	line-height: 1.5;
-}
-
-.pron_examples {
-	font-size: 12px;
-	color: var(--secondary_text);
-	display: flex;
-	gap: 8px;
-	align-items: baseline;
-}
-
-.no_letter {
-	color: var(--tertiary_text);
-	font-style: italic;
-}
-
-.info_hint {
-	color: var(--secondary_text);
-	font-size: 14px;
-	line-height: 1.5;
-	padding: 16px;
-	background: var(--surface_bg);
-	border: 1px dashed var(--subtle_stroke);
-	border-radius: var(--r_3);
-	text-align: center;
-}
-
-.quiz_cta {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-	align-items: center;
-	padding: 14px 16px;
-	margin-top: 12px;
+	padding: 22px 16px;
 	background: var(--page_bg);
-	border: 1px solid var(--accent_primary);
+	border: 1px solid var(--subtle_stroke);
 	border-radius: var(--r_3);
-	color: var(--primary_text);
 	cursor: pointer;
-	transition: background-color .15s, color .15s;
-	width: 100%;
+	transition: background-color .15s, border-color .15s;
 	font-family: var(--f_ui);
 }
 
-.quiz_cta:hover {
+.mode_btn:hover {
 	background: var(--quiet_button_bg);
-	border-color: var(--quiet_button_border);
+	border-color: var(--accent_primary);
 }
 
-.quiz_cta_label {
-	font-size: 15px;
+.mode_btn_title {
+	font-size: 16px;
 	font-weight: 600;
-}
-
-.quiz_cta_sub {
-	font-size: 13px;
-	opacity: 0.85;
-}
-
-.quiz_panel {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-	margin-top: 12px;
-}
-
-.quiz_header {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-}
-
-.quiz_progress {
-	flex: 1;
-	font-family: var(--f_mono);
-	font-size: 13px;
-	color: var(--secondary_text);
-}
-
-.quiz_prompt {
-	margin: 0;
-	font-size: 13px;
-	color: var(--secondary_text);
-}
-
-/* ── Font picker ───────────────────────────────────────── */
-.font_picker_section {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-	margin-top: 4px;
-}
-
-.font_picker {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 8px;
-}
-
-.font_btn {
-	display: inline-flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 4px;
-	padding: 10px 14px;
-	border: 1px solid var(--subtle_stroke);
-	border-radius: var(--r_3);
-	background: var(--surface_bg);
 	color: var(--primary_text);
-	cursor: pointer;
-	transition: background-color .15s, border-color .15s;
 }
 
-.font_btn:hover {
-	background: var(--quiet_button_bg);
-	border-color: var(--quiet_button_border);
+.mode_btn_sub {
+	font-size: 12px;
+	color: var(--tertiary_text);
 }
 
-.font_btn.active {
-	background: var(--inverse_surface_bg);
-	border-color: var(--inverse_surface_bg);
-	color: var(--inverse_text);
+
+.shape_canvas.test_mode .glyph-path {
+	pointer-events: none;
+	cursor: default;
 }
 
-.font_btn_sample {
-	font-size: 1.4rem;
-	direction: rtl;
+.shape_canvas.test_mode .glyph-cluster.selected .glyph-path,
+.shape_canvas.test_mode .glyph-cluster.selected:hover .glyph-path {
+	fill: var(--accent_honor);
+	animation: test_glyph_pulse 1.4s ease-in-out infinite;
 }
 
-.font_btn_label {
-	font-family: var(--f_mono);
-	font-size: 10px;
-	letter-spacing: 0.02em;
-	color: inherit;
-	opacity: .75;
+
+@keyframes test_glyph_pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.5; }
 }
 
-/* ── Responsive ───────────────────────────────── */
+/* ── Responsive ───────────────────────────────────────── */
+
 @media (max-width: 640px) {
 	.shape_page { gap: 16px; }
-	.hero h1 { font-size: clamp(1.5rem, 6vw, 2rem); }
-	.field_top_row .text_input { min-width: 0; }
-	.example_chip { height: 48px; }
-	.example_chip .ex_text { font-size: clamp(1rem, 3.9vw, 1.15rem); }
-	.text_input { height: 48px; font-size: 18px; padding: 0 12px; }
 	.panel_body { padding: 14px; }
-	.letter_row { gap: 12px; }
-	.hero_letter {
-		font-size: 3rem;
-		flex-shrink: 0;
-	}
-	.pron_header {
-		flex-wrap: nowrap;
-		gap: 8px;
-	}
-	.dialect_picker { flex-wrap: nowrap; }
 	.notice { font-size: 12px; }
 	.notice_preview { font-size: 1.2rem; }
-	.form_glyph { font-size: clamp(1.2rem, 5.5vw, 1.6rem); }
-}
-
-@media (max-width: 420px) {
-	.hero_letter { font-size: 2.5rem; }
-	.letter_name { font-size: 1.1rem; }
-	.nav_btn { padding: 6px 10px; }
-	.nav_preview { font-size: 1.3rem; }
+	.mode_chooser { flex-direction: column; }
 }
 </style>

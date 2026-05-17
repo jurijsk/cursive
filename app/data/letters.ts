@@ -5,7 +5,9 @@ export type GlyphKind = 'letter' | 'diacritic' | 'extender';
 
 export interface LetterPronunciation {
 	ipa: string;
+	ipaShort?: string;
 	description: string;
+	testDescription: string;
 	englishExamples: string[];
 }
 
@@ -14,6 +16,7 @@ interface LetterInfoBase {
 	name: string;
 	arabicName: string;
 	transliteration: string[];
+	transliterationByDialect?: Record<Dialect, string[]>;
 	pronunciation: Record<Dialect, LetterPronunciation>;
 }
 
